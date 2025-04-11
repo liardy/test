@@ -57,10 +57,74 @@
       background-color: #88e;
       color: #fff;
     }
+    .filter-label {
+      font-size: 13px;
+      font-weight: normal;
+      margin-bottom: 3px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .search-input {
+      font-size: 13px;
+      padding: 4px;
+    }
+    .toggle-wrapper {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0;
+      right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    .switch input:checked + .slider {
+      background-color: #26a69a;
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(16px);
+    }
   </style>
 </head>
 <body>
   <div class="sidebar">
+    <div class="toggle-wrapper">
+      <label for="modeToggle" class="filter-label">Поиск/Билд</label>
+      <label class="switch">
+        <input type="checkbox" id="modeToggle">
+        <span class="slider"></span>
+      </label>
+    </div>
     <h2>Герои</h2>
     <div id="heroList"></div>
     <hr style="margin: 10px 0;">
@@ -70,18 +134,27 @@
     </div>
   </div>
   <div class="main">
+    <div class="topbar">
+      <div style="display: flex; flex-direction: column;">
+        <label class="filter-label" for="searchInput">Поиск</label>
+        <input type="text" id="searchInput" class="search-input" placeholder="Введите текст...">
+      </div>
+    </div>
     <div style="margin-bottom: 10px;">
-      <div id="rarityButtons" style="margin-bottom: 10px; display: flex; flex-wrap: wrap; gap: 5px;">
-        <button class="rarity-btn" data-value="базовая">Базовая</button>
-        <button class="rarity-btn" data-value="необычная">Необычная</button>
-        <button class="rarity-btn" data-value="редкая">Редкая</button>
-        <button class="rarity-btn" data-value="легендарная">Легендарная</button>
-        <button class="rarity-btn" data-value="эпическая">Эпическая</button>
-        <button class="rarity-btn" data-value="лидерская">Лидерская</button>
+      <div style="display: flex; flex-direction: column; margin-bottom: 5px;">
+        <label class="filter-label">Ценность</label>
+        <div id="rarityButtons" style="display: flex; flex-wrap: wrap; gap: 5px;">
+          <button class="rarity-btn" data-value="базовая">Базовая</button>
+          <button class="rarity-btn" data-value="необычная">Необычная</button>
+          <button class="rarity-btn" data-value="редкая">Редкая</button>
+          <button class="rarity-btn" data-value="легендарная">Легендарная</button>
+          <button class="rarity-btn" data-value="эпическая">Эпическая</button>
+          <button class="rarity-btn" data-value="лидерская">Лидерская</button>
+        </div>
       </div>
       <div class="filters" style="display: flex; flex-wrap: wrap; gap: 10px;">
         <div style="display: flex; flex-direction: column;">
-          <label for="elementFilter">Элемент</label>
+          <label class="filter-label" for="elementFilter">Элемент</label>
           <select id="elementFilter">
             <option value="">Любой</option>
             <option>Истина</option>
@@ -122,8 +195,9 @@
       </table>
     </div>
   </div>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
-const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Домнинон", "Ключница", "Алхимик", "Ренегат"];
+const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
 let selectedHeroes = [];
 let selectedRarities = [];
 let fullData = [];
@@ -178,12 +252,16 @@ function applyFilters() {
   const block = document.getElementById("blockFilter").value;
   const blockType = document.getElementById("blockTypeFilter").value;
   const direction = document.getElementById("directionFilter").value;
+  const search = document.getElementById("searchInput").value.toLowerCase();
 
   if (element) filtered = filtered.filter(card => card.Element === element);
   if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
   if (block) filtered = filtered.filter(card => card.BlockValue === block);
   if (blockType) filtered = filtered.filter(card => card.Type === blockType);
   if (direction) filtered = filtered.filter(card => card.Type === direction);
+  if (search) filtered = filtered.filter(card => {
+    return ['SlowText','FastText','InstantText'].some(key => (card[key] || '').toLowerCase().includes(search));
+  });
 
   document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
   renderTable(filtered);
@@ -233,6 +311,7 @@ document.addEventListener("DOMContentLoaded", function () {
   document.querySelectorAll('.filters select').forEach(select => {
     select.addEventListener('change', applyFilters);
   });
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
 
   Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
     download: true,
