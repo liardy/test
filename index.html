@@ -26,6 +26,7 @@
     }
     .filters {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 10px;
     }
@@ -37,6 +38,8 @@
       border: 1px solid #ccc;
       padding: 5px;
       text-align: center;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .rarity-buttons button.active,
     .sidebar button.active {
@@ -45,9 +48,7 @@
   </style>
 </head>
 <body>
-  <div class="sidebar" id="heroList">
-    <!-- Герои -->
-  </div>
+  <div class="sidebar" id="heroList"></div>
 
   <div class="main">
     <div class="filters">
@@ -66,19 +67,13 @@
         <option>Свобода</option>
         <option>Универсум</option>
       </select>
-      <select id="damageFilter">
-        <option value="">Базовый урон</option>
-        ${[...Array(11).keys()].map(i => `<option>${i}</option>`).join('')}
-      </select>
+      <select id="damageFilter"></select>
       <select id="directionFilter">
         <option value="">Направленность</option>
         <option>Прицельная</option>
         <option>По области</option>
       </select>
-      <select id="blockFilter">
-        <option value="">Блок</option>
-        ${[...Array(6).keys()].map(i => `<option>${i}</option>`).join('')}
-      </select>
+      <select id="blockFilter"></select>
       <select id="blockTypeFilter">
         <option value="">Тип блока</option>
         <option>Стандартный блок</option>
@@ -102,9 +97,7 @@
           <th>Стремительное свойство</th>
         </tr>
       </thead>
-      <tbody id="cardTable">
-        <!-- Карты -->
-      </tbody>
+      <tbody id="cardTable"></tbody>
     </table>
   </div>
 
@@ -147,6 +140,13 @@
       blockType: document.getElementById('blockTypeFilter')
     };
 
+    for (let i = 0; i <= 10; i++) {
+      filters.damage.innerHTML += `<option>${i}</option>`;
+    }
+    for (let i = 0; i <= 5; i++) {
+      filters.block.innerHTML += `<option>${i}</option>`;
+    }
+
     Object.values(filters).forEach(filter => {
       filter.onchange = filterCards;
     });
@@ -156,16 +156,24 @@
     fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv')
       .then(res => res.text())
       .then(csv => {
-        const lines = csv.split('\n');
+        const lines = csv.trim().split('\n');
         const headers = lines[0].split(',');
         cardsData = lines.slice(1).map(line => {
           const values = line.split(',');
           const card = {};
-          headers.forEach((h, i) => card[h.trim()] = values[i]?.trim());
+          headers.forEach((h, i) => card[h.trim()] = values[i]?.trim() || "");
           return card;
         });
         filterCards();
       });
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/\"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+    }
 
     function filterCards() {
       const tbody = document.getElementById('cardTable');
@@ -185,7 +193,7 @@
           'Блок доп. урона': 'BlockAditionalDamage.png',
           'Блок свойства': 'BlockProperty.png',
         };
-        const blockTypeMatch = !filters.blockType.value || card.BlockIMG.includes(blockTypeMap[filters.blockType.value]);
+        const blockTypeMatch = !filters.blockType.value || card.BlockIMG?.includes(blockTypeMap[filters.blockType.value]);
         const directionMatch = !filters.direction.value || (filters.direction.value === 'По области' ? card["Тип направлен"] === 'О' : card["Тип направлен"] === 'П');
 
         return heroMatch && rarityMatch && elementMatch && dmgMatch && blockMatch && blockTypeMatch && directionMatch;
@@ -194,13 +202,13 @@
       for (const card of filtered) {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><img src="${card.ImageURL || ''}" alt="" width="50"></td>
-          <td>${card["Card name"]}</td>
-          <td>${card["Элемент"]}</td>
-          <td>${card.DMGValue}</td>
-          <td>${card.SlowText}</td>
-          <td>${card.FastText}</td>
-          <td>${card.InstantText}</td>
+          <td><img src="${escapeHtml(card.ImageURL || '')}" alt="" width="50"></td>
+          <td>${escapeHtml(card["Card name"] || '')}</td>
+          <td>${escapeHtml(card["Элемент"] || '')}</td>
+          <td>${escapeHtml(card.DMGValue || '')}</td>
+          <td>${escapeHtml(card.SlowText || '')}</td>
+          <td>${escapeHtml(card.FastText || '')}</td>
+          <td>${escapeHtml(card.InstantText || '')}</td>
         `;
         tbody.appendChild(row);
       }
