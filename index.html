@@ -63,6 +63,11 @@
   <div class="sidebar">
     <h2>Герои</h2>
     <div id="heroList"></div>
+    <hr style="margin: 10px 0;">
+    <div>
+      <button id="allHeroesBtn">Все</button>
+      <button id="elementalHeroBtn">Стихия</button>
+    </div>
   </div>
   <div class="main">
     <div style="margin-bottom: 10px;">
@@ -131,6 +136,8 @@
           btn.style.backgroundColor = '#fff';
         }
       });
+      elementalHeroBtn.style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
+      allHeroesBtn.style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
     }
 
     function renderTable(data) {
@@ -173,7 +180,7 @@
       }
 
       if (selectedRarities.length > 0) {
-        filtered = filtered.filter(card => selectedRarities.includes(card.Rarity?.toLowerCase()));
+        filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
       }
 
       const element = document.getElementById("elementFilter").value;
@@ -193,6 +200,9 @@
     }
 
     const heroList = document.getElementById('heroList');
+    const allHeroesBtn = document.getElementById('allHeroesBtn');
+    const elementalHeroBtn = document.getElementById('elementalHeroBtn');
+
     heroNames.forEach(hero => {
       const btn = document.createElement('button');
       btn.textContent = hero;
@@ -208,6 +218,26 @@
       };
       heroList.appendChild(btn);
     });
+
+    allHeroesBtn.onclick = () => {
+      if (selectedHeroes.length === heroNames.length + 1) {
+        selectedHeroes = [];
+      } else {
+        selectedHeroes = [...heroNames, "Стихия"];
+      }
+      updateHeroButtons();
+      applyFilters();
+    };
+
+    elementalHeroBtn.onclick = () => {
+      if (selectedHeroes.includes("Стихия")) {
+        selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
+      } else {
+        selectedHeroes.push("Стихия");
+      }
+      updateHeroButtons();
+      applyFilters();
+    };
 
     document.querySelectorAll('.filters select').forEach(select => {
       select.addEventListener('change', applyFilters);
@@ -236,7 +266,6 @@
               btn.classList.remove('active');
             } else {
               selectedRarities.push(rarity);
-              btn.classList.add('active');
               btn.classList.add('active');
             }
             applyFilters();
