@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Калькулятор Карт</title>
+  <style>
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+    }
+    .sidebar {
+      width: 200px;
+      padding: 10px;
+      border-right: 1px solid #ccc;
+    }
+    .sidebar button {
+      display: block;
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 5px;
+    }
+    .main {
+      flex: 1;
+      padding: 10px;
+    }
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: center;
+    }
+    .rarity-buttons button.active,
+    .sidebar button.active {
+      background-color: #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar" id="heroList">
+    <!-- Герои -->
+  </div>
+
+  <div class="main">
+    <div class="filters">
+      <div class="rarity-buttons" id="rarityButtons">
+        <button>Базовая</button>
+        <button>Необычная</button>
+        <button>Редкая</button>
+        <button>Легендарная</button>
+        <button>Эпическая</button>
+        <button>Лидерская</button>
+      </div>
+      <select id="elementFilter">
+        <option value="">Элемент</option>
+        <option>Истина</option>
+        <option>Хаос</option>
+        <option>Свобода</option>
+        <option>Универсум</option>
+      </select>
+      <select id="damageFilter">
+        <option value="">Базовый урон</option>
+        ${[...Array(11).keys()].map(i => `<option>${i}</option>`).join('')}
+      </select>
+      <select id="directionFilter">
+        <option value="">Направленность</option>
+        <option>Прицельная</option>
+        <option>По области</option>
+      </select>
+      <select id="blockFilter">
+        <option value="">Блок</option>
+        ${[...Array(6).keys()].map(i => `<option>${i}</option>`).join('')}
+      </select>
+      <select id="blockTypeFilter">
+        <option value="">Тип блока</option>
+        <option>Стандартный блок</option>
+        <option>Блок с отражением</option>
+        <option>Блок с поглощением</option>
+        <option>Блок союзника</option>
+        <option>Блок доп. урона</option>
+        <option>Блок свойства</option>
+      </select>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Изображение</th>
+          <th>Название</th>
+          <th>Элемент</th>
+          <th>Базовый урон</th>
+          <th>Медленное свойство</th>
+          <th>Быстрое свойство</th>
+          <th>Стремительное свойство</th>
+        </tr>
+      </thead>
+      <tbody id="cardTable">
+        <!-- Карты -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    const heroes = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Домнинон", "Ключница", "Алхимик", "Ренегат"];
+    const heroList = document.getElementById('heroList');
+    let selectedHeroes = new Set();
+
+    heroes.forEach(hero => {
+      const btn = document.createElement('button');
+      btn.textContent = hero;
+      btn.onclick = () => {
+        btn.classList.toggle('active');
+        selectedHeroes.has(hero) ? selectedHeroes.delete(hero) : selectedHeroes.add(hero);
+        filterCards();
+      };
+      heroList.appendChild(btn);
+    });
+
+    const rarityButtons = document.querySelectorAll('#rarityButtons button');
+    let selectedRarity = "";
+    rarityButtons.forEach(btn => {
+      btn.onclick = () => {
+        rarityButtons.forEach(b => b.classList.remove('active'));
+        if (selectedRarity === btn.textContent) {
+          selectedRarity = "";
+        } else {
+          btn.classList.add('active');
+          selectedRarity = btn.textContent;
+        }
+        filterCards();
+      };
+    });
+
+    const filters = {
+      element: document.getElementById('elementFilter'),
+      damage: document.getElementById('damageFilter'),
+      direction: document.getElementById('directionFilter'),
+      block: document.getElementById('blockFilter'),
+      blockType: document.getElementById('blockTypeFilter')
+    };
+
+    Object.values(filters).forEach(filter => {
+      filter.onchange = filterCards;
+    });
+
+    let cardsData = [];
+
+    fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv')
+      .then(res => res.text())
+      .then(csv => {
+        const lines = csv.split('\n');
+        const headers = lines[0].split(',');
+        cardsData = lines.slice(1).map(line => {
+          const values = line.split(',');
+          const card = {};
+          headers.forEach((h, i) => card[h.trim()] = values[i]?.trim());
+          return card;
+        });
+        filterCards();
+      });
+
+    function filterCards() {
+      const tbody = document.getElementById('cardTable');
+      tbody.innerHTML = '';
+
+      const filtered = cardsData.filter(card => {
+        const heroMatch = selectedHeroes.size === 0 || selectedHeroes.has(card.HeroName);
+        const rarityMatch = !selectedRarity || card["Редкость"] === selectedRarity;
+        const elementMatch = !filters.element.value || card["Элемент"] === filters.element.value;
+        const dmgMatch = !filters.damage.value || card.DMGValue === filters.damage.value;
+        const blockMatch = !filters.block.value || card.BlockValue === filters.block.value;
+        const blockTypeMap = {
+          'Стандартный блок': 'BlockDefault.png',
+          'Блок с отражением': 'BlockReflect.png',
+          'Блок с поглощением': 'BlockAbsorb.png',
+          'Блок союзника': 'BlockAlly.png',
+          'Блок доп. урона': 'BlockAditionalDamage.png',
+          'Блок свойства': 'BlockProperty.png',
+        };
+        const blockTypeMatch = !filters.blockType.value || card.BlockIMG.includes(blockTypeMap[filters.blockType.value]);
+        const directionMatch = !filters.direction.value || (filters.direction.value === 'По области' ? card["Тип направлен"] === 'О' : card["Тип направлен"] === 'П');
+
+        return heroMatch && rarityMatch && elementMatch && dmgMatch && blockMatch && blockTypeMatch && directionMatch;
+      });
+
+      for (const card of filtered) {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><img src="${card.ImageURL || ''}" alt="" width="50"></td>
+          <td>${card["Card name"]}</td>
+          <td>${card["Элемент"]}</td>
+          <td>${card.DMGValue}</td>
+          <td>${card.SlowText}</td>
+          <td>${card.FastText}</td>
+          <td>${card.InstantText}</td>
+        `;
+        tbody.appendChild(row);
+      }
+    }
+  </script>
+</body>
+</html>
