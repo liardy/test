@@ -205,12 +205,12 @@
         const row = document.createElement('tr');
         row.innerHTML = `
           <td><img src="${card.ImageURL || ''}" alt="" width="50"></td>
-          <td>${card["Card name"]}</td>
+          <td>${escapeHtml(card["Card name"])}</td>
           <td>${card["Элемент"]}</td>
           <td>${card.DMGValue}</td>
-          <td>\${escapeHtml(card.SlowText)}</td>
-          <td>${card.FastText}</td>
-          <td>${card.InstantText}</td>
+          <td>${escapeHtml(card.SlowText)}</td>
+          <td>${escapeHtml(card.FastText)}</td>
+          <td>${escapeHtml(card.InstantText)}</td>
         `;
         tbody.appendChild(row);
       }
