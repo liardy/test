@@ -27,9 +27,9 @@
     }
     .filters {
       display: flex;
-      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 10px;
+      flex-wrap: wrap;
     }
     table {
       width: 100%;
@@ -50,7 +50,6 @@
 </head>
 <body>
   <div class="sidebar" id="heroList"></div>
-
   <div class="main">
     <div class="filters">
       <div class="rarity-buttons" id="rarityButtons">
@@ -85,7 +84,6 @@
         <option>Блок свойства</option>
       </select>
     </div>
-
     <table>
       <thead>
         <tr>
@@ -113,6 +111,7 @@
       btn.onclick = () => {
         btn.classList.toggle('active');
         selectedHeroes.has(hero) ? selectedHeroes.delete(hero) : selectedHeroes.add(hero);
+        console.log("Пример карты:", cardsData[0]);
         filterCards();
       };
       heroList.appendChild(btn);
@@ -157,19 +156,18 @@
     Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
       download: true,
       header: true,
+      skipEmptyLines: true,
       complete: function(results) {
-        cardsData = results.data;
+        cardsData = results.data.map(card => {
+          const cleaned = {};
+          for (const key in card) {
+            cleaned[key.trim()] = (card[key] || '').trim().replace(/^"|"$/g, '');
+          }
+          return cleaned;
+        });
         filterCards();
       }
     });
-
-    function escapeHtml(text) {
-      return (text || '').replace(/&/g, "&amp;")
-                 .replace(/</g, "&lt;")
-                 .replace(/>/g, "&gt;")
-                 .replace(/\"/g, "&quot;")
-                 .replace(/'/g, "&#039;");
-    }
 
     function filterCards() {
       const tbody = document.getElementById('cardTable');
@@ -198,13 +196,13 @@
       for (const card of filtered) {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><img src="${escapeHtml(card.ImageURL || '')}" alt="" width="50"></td>
-          <td>${escapeHtml(card["Card name"] || '')}</td>
-          <td>${escapeHtml(card["Элемент"] || '')}</td>
-          <td>${escapeHtml(card.DMGValue || '')}</td>
-          <td>${escapeHtml(card.SlowText || '')}</td>
-          <td>${escapeHtml(card.FastText || '')}</td>
-          <td>${escapeHtml(card.InstantText || '')}</td>
+          <td><img src="${card.ImageURL || ''}" alt="" width="50"></td>
+          <td>${card["Card name"]}</td>
+          <td>${card["Элемент"]}</td>
+          <td>${card.DMGValue}</td>
+          <td>${card.SlowText}</td>
+          <td>${card.FastText}</td>
+          <td>${card.InstantText}</td>
         `;
         tbody.appendChild(row);
       }
