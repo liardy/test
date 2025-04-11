@@ -80,13 +80,16 @@
         <button class="rarity-btn" data-value="лидерская">Лидерская</button>
       </div>
       <div class="filters" style="display: flex; flex-wrap: wrap; gap: 10px;">
-        <select id="elementFilter">
-          <option value="">Элемент</option>
-          <option>Истина</option>
-          <option>Хаос</option>
-          <option>Свобода</option>
-          <option>Универсум</option>
-        </select>
+        <div style="display: flex; flex-direction: column;">
+          <label for="elementFilter">Элемент</label>
+          <select id="elementFilter">
+            <option value="">Любой</option>
+            <option>Истина</option>
+            <option>Хаос</option>
+            <option>Свобода</option>
+            <option>Универсум</option>
+          </select>
+        </div>
         <select id="damageFilter">
           <option value="">Базовый урон</option>
           <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
@@ -119,160 +122,149 @@
       </table>
     </div>
   </div>
-  <script>
-    const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Домнинон", "Ключница", "Алхимик", "Ренегат"];
-    let selectedHeroes = [];
-    let selectedRarities = [];
-    let fullData = [];
+<script>
+const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Домнинон", "Ключница", "Алхимик", "Ренегат"];
+let selectedHeroes = [];
+let selectedRarities = [];
+let fullData = [];
 
-    function updateHeroButtons() {
-      document.querySelectorAll('#heroList button').forEach(btn => {
-        const name = btn.textContent;
-        if (selectedHeroes.length > 0 && name === selectedHeroes[0]) {
-          btn.style.backgroundColor = 'gold';
-        } else if (selectedHeroes.includes(name)) {
-          btn.style.backgroundColor = '#ccf';
-        } else {
-          btn.style.backgroundColor = '#fff';
-        }
-      });
-      elementalHeroBtn.style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
-      allHeroesBtn.style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
+function updateHeroButtons() {
+  document.querySelectorAll('#heroList button').forEach(btn => {
+    const name = btn.textContent;
+    if (selectedHeroes.includes(name)) {
+      btn.style.backgroundColor = (selectedHeroes[0] === name) ? 'gold' : '#ccf';
+    } else {
+      btn.style.backgroundColor = '#fff';
     }
+  });
+  document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
+  document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
+}
 
-    function renderTable(data) {
-      const tableHead = document.getElementById("tableHead");
-      const cardTable = document.getElementById("cardTable");
-      tableHead.innerHTML = '';
-      cardTable.innerHTML = '';
+function renderTable(data) {
+  const tableHead = document.getElementById("tableHead");
+  const cardTable = document.getElementById("cardTable");
+  tableHead.innerHTML = '';
+  cardTable.innerHTML = '';
 
-      if (data.length === 0) return;
-      Object.keys(data[0]).forEach(key => {
-        const th = document.createElement('th');
-        th.textContent = key;
-        tableHead.appendChild(th);
-      });
+  if (data.length === 0) return;
+  Object.keys(data[0]).forEach(key => {
+    const th = document.createElement('th');
+    th.textContent = key;
+    tableHead.appendChild(th);
+  });
 
-      data.forEach(card => {
-        const tr = document.createElement('tr');
-        Object.values(card).forEach(value => {
-          const td = document.createElement('td');
-          td.innerHTML = escapeHtml(value);
-          tr.appendChild(td);
-        });
-        cardTable.appendChild(tr);
-      });
-    }
-
-    function escapeHtml(text) {
-      return (text || '').replace(/&/g, "&amp;")
-                         .replace(/</g, "&lt;")
-                         .replace(/>/g, "&gt;")
-                         .replace(/\"/g, "&quot;")
-                         .replace(/'/g, "&#039;");
-    }
-
-    function applyFilters() {
-      let filtered = [...fullData];
-
-      if (selectedHeroes.length > 0) {
-        filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
-      }
-
-      if (selectedRarities.length > 0) {
-        filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
-      }
-
-      const element = document.getElementById("elementFilter").value;
-      const dmg = document.getElementById("damageFilter").value;
-      const block = document.getElementById("blockFilter").value;
-      const blockType = document.getElementById("blockTypeFilter").value;
-      const direction = document.getElementById("directionFilter").value;
-
-      if (element) filtered = filtered.filter(card => card.Element === element);
-      if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
-      if (block) filtered = filtered.filter(card => card.BlockValue === block);
-      if (blockType) filtered = filtered.filter(card => card.Type === blockType);
-      if (direction) filtered = filtered.filter(card => card.Direction === direction);
-
-      document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
-      renderTable(filtered);
-    }
-
-    const heroList = document.getElementById('heroList');
-    const allHeroesBtn = document.getElementById('allHeroesBtn');
-    const elementalHeroBtn = document.getElementById('elementalHeroBtn');
-
-    heroNames.forEach(hero => {
-      const btn = document.createElement('button');
-      btn.textContent = hero;
-      btn.onclick = () => {
-        const index = selectedHeroes.indexOf(hero);
-        if (index >= 0) {
-          selectedHeroes.splice(index, 1);
-        } else if (selectedHeroes.length < 4) {
-          selectedHeroes.push(hero);
-        }
-        updateHeroButtons();
-        applyFilters();
-      };
-      heroList.appendChild(btn);
+  data.forEach(card => {
+    const tr = document.createElement('tr');
+    Object.values(card).forEach(value => {
+      const td = document.createElement('td');
+      td.textContent = value;
+      tr.appendChild(td);
     });
+    cardTable.appendChild(tr);
+  });
+}
 
-    allHeroesBtn.onclick = () => {
-      if (selectedHeroes.length === heroNames.length + 1) {
-        selectedHeroes = [];
-      } else {
-        selectedHeroes = [...heroNames, "Стихия"];
+function applyFilters() {
+  let filtered = [...fullData];
+  if (selectedHeroes.length > 0) {
+    filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
+  }
+  if (selectedRarities.length > 0) {
+    filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
+  }
+  const element = document.getElementById("elementFilter").value;
+  const dmg = document.getElementById("damageFilter").value;
+  const block = document.getElementById("blockFilter").value;
+  const blockType = document.getElementById("blockTypeFilter").value;
+  const direction = document.getElementById("directionFilter").value;
+
+  if (element) filtered = filtered.filter(card => card.Element === element);
+  if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
+  if (block) filtered = filtered.filter(card => card.BlockValue === block);
+  if (blockType) filtered = filtered.filter(card => card.Type === blockType);
+  if (direction) filtered = filtered.filter(card => card.Type === direction);
+
+  document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
+  renderTable(filtered);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const heroList = document.getElementById('heroList');
+  const allHeroesBtn = document.getElementById('allHeroesBtn');
+  const elementalHeroBtn = document.getElementById('elementalHeroBtn');
+
+  heroNames.forEach(hero => {
+    const btn = document.createElement('button');
+    btn.textContent = hero;
+    btn.onclick = () => {
+      const index = selectedHeroes.indexOf(hero);
+      if (index >= 0) {
+        selectedHeroes.splice(index, 1);
+      } else if (selectedHeroes.filter(h => h !== "Стихия").length < 4) {
+        selectedHeroes.push(hero);
       }
       updateHeroButtons();
       applyFilters();
     };
+    heroList.appendChild(btn);
+  });
 
-    elementalHeroBtn.onclick = () => {
-      if (selectedHeroes.includes("Стихия")) {
-        selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
-      } else {
-        selectedHeroes.push("Стихия");
-      }
-      updateHeroButtons();
+  allHeroesBtn.onclick = () => {
+    if (selectedHeroes.length === heroNames.length + 1) {
+      selectedHeroes = [];
+    } else {
+      selectedHeroes = [...heroNames, "Стихия"];
+    }
+    updateHeroButtons();
+    applyFilters();
+  };
+
+  elementalHeroBtn.onclick = () => {
+    if (selectedHeroes.includes("Стихия")) {
+      selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
+    } else {
+      selectedHeroes.push("Стихия");
+    }
+    updateHeroButtons();
+    applyFilters();
+  };
+
+  document.querySelectorAll('.filters select').forEach(select => {
+    select.addEventListener('change', applyFilters);
+  });
+
+  Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      fullData = results.data;
+      document.querySelectorAll('.rarity-btn').forEach(btn => {
+        const rarity = btn.dataset.value;
+        selectedRarities.push(rarity);
+        btn.classList.add('active');
+      });
+      renderTable(fullData);
       applyFilters();
-    };
 
-    document.querySelectorAll('.filters select').forEach(select => {
-      select.addEventListener('change', applyFilters);
-    });
-
-    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        fullData = results.data;
-        document.querySelectorAll('.rarity-btn').forEach(btn => {
+      document.querySelectorAll('.rarity-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
           const rarity = btn.dataset.value;
-          selectedRarities.push(rarity);
-          btn.classList.add('active');
+          const index = selectedRarities.indexOf(rarity);
+          if (index >= 0) {
+            selectedRarities.splice(index, 1);
+            btn.classList.remove('active');
+          } else {
+            selectedRarities.push(rarity);
+            btn.classList.add('active');
+          }
+          applyFilters();
         });
-        renderTable(fullData);
-        applyFilters();
-
-        document.querySelectorAll('.rarity-btn').forEach(btn => {
-          btn.addEventListener('click', () => {
-            const rarity = btn.dataset.value;
-            const index = selectedRarities.indexOf(rarity);
-            if (index >= 0) {
-              selectedRarities.splice(index, 1);
-              btn.classList.remove('active');
-            } else {
-              selectedRarities.push(rarity);
-              btn.classList.add('active');
-            }
-            applyFilters();
-          });
-        });
-      }
-    });
-  </script>
+      });
+    }
+  });
+});
+</script>
 </body>
 </html>
