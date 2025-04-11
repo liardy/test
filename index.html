@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Калькулятор Карт</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     body {
       display: flex;
@@ -153,22 +154,17 @@
 
     let cardsData = [];
 
-    fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv')
-      .then(res => res.text())
-      .then(csv => {
-        const lines = csv.trim().split('\n');
-        const headers = lines[0].split(',');
-        cardsData = lines.slice(1).map(line => {
-          const values = line.split(',');
-          const card = {};
-          headers.forEach((h, i) => card[h.trim()] = values[i]?.trim() || "");
-          return card;
-        });
+    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
+      download: true,
+      header: true,
+      complete: function(results) {
+        cardsData = results.data;
         filterCards();
-      });
+      }
+    });
 
     function escapeHtml(text) {
-      return text.replace(/&/g, "&amp;")
+      return (text || '').replace(/&/g, "&amp;")
                  .replace(/</g, "&lt;")
                  .replace(/>/g, "&gt;")
                  .replace(/\"/g, "&quot;")
