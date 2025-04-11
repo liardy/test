@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Калькулятор Карт</title>
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     body {
       display: flex;
@@ -27,9 +26,9 @@
     }
     .filters {
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 10px;
-      flex-wrap: wrap;
     }
     table {
       width: 100%;
@@ -50,6 +49,7 @@
 </head>
 <body>
   <div class="sidebar" id="heroList"></div>
+
   <div class="main">
     <div class="filters">
       <div class="rarity-buttons" id="rarityButtons">
@@ -84,6 +84,7 @@
         <option>Блок свойства</option>
       </select>
     </div>
+
     <table>
       <thead>
         <tr>
@@ -101,13 +102,6 @@
   </div>
 
   <script>
-    function escapeHtml(text) {
-      return (text || '').replace(/&/g, "&amp;")
-                         .replace(/</g, "&lt;")
-                         .replace(/>/g, "&gt;")
-                         .replace(/\"/g, "&quot;")
-                         .replace(/'/g, "&#039;");
-    }
     const heroes = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Домнинон", "Ключница", "Алхимик", "Ренегат"];
     const heroList = document.getElementById('heroList');
     let selectedHeroes = new Set();
@@ -118,8 +112,6 @@
       btn.onclick = () => {
         btn.classList.toggle('active');
         selectedHeroes.has(hero) ? selectedHeroes.delete(hero) : selectedHeroes.add(hero);
-        
-        
         filterCards();
       };
       heroList.appendChild(btn);
@@ -161,21 +153,27 @@
 
     let cardsData = [];
 
-    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        cardsData = results.data.map(card => {
-          const cleaned = {};
-          for (const key in card) {
-            cleaned[key.trim()] = (card[key] || '').trim().replace(/^"|"$/g, '');
-          }
-          return cleaned;
+    fetch('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv')
+      .then(res => res.text())
+      .then(csv => {
+        const lines = csv.trim().split('\n');
+        const headers = lines[0].split(',');
+        cardsData = lines.slice(1).map(line => {
+          const values = line.split(',');
+          const card = {};
+          headers.forEach((h, i) => card[h.trim()] = values[i]?.trim() || "");
+          return card;
         });
         filterCards();
-      }
-    });
+      });
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/\"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+    }
 
     function filterCards() {
       const tbody = document.getElementById('cardTable');
@@ -204,13 +202,13 @@
       for (const card of filtered) {
         const row = document.createElement('tr');
         row.innerHTML = `
-          <td><img src="${card.ImageURL || ''}" alt="" width="50"></td>
-          <td>${escapeHtml(card["Card name"])}</td>
-          <td>${card["Элемент"]}</td>
-          <td>${card.DMGValue}</td>
-          <td>${escapeHtml(card.SlowText)}</td>
-          <td>${escapeHtml(card.FastText)}</td>
-          <td>${escapeHtml(card.InstantText)}</td>
+          <td><img src="${escapeHtml(card.ImageURL || '')}" alt="" width="50"></td>
+          <td>${escapeHtml(card["Card name"] || '')}</td>
+          <td>${escapeHtml(card["Элемент"] || '')}</td>
+          <td>${escapeHtml(card.DMGValue || '')}</td>
+          <td>${escapeHtml(card.SlowText || '')}</td>
+          <td>${escapeHtml(card.FastText || '')}</td>
+          <td>${escapeHtml(card.InstantText || '')}</td>
         `;
         tbody.appendChild(row);
       }
