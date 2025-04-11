@@ -47,15 +47,20 @@
       word-break: break-word;
     }
     .rarity-btn {
-      padding: 4px 8px;
-      font-size: 12px;
-      background: #eee;
-      border: 1px solid #ccc;
+      padding: 2px;
+      background: transparent;
+      border: none;
       cursor: pointer;
+      border-radius: 6px;
     }
-    .rarity-btn.active {
-      background-color: #88e;
-      color: #fff;
+    .rarity-btn img {
+      height: 32px;
+      transition: 0.2s ease;
+      border-radius: 6px;
+    }
+    .rarity-btn.active img {
+      box-shadow: 0 0 5px 2px #4488ff;
+      background-color: #e0f0ff;
     }
     .filter-label {
       font-size: 13px;
@@ -144,12 +149,24 @@
       <div style="display: flex; flex-direction: column; margin-bottom: 5px;">
         <label class="filter-label">Ценность</label>
         <div id="rarityButtons" style="display: flex; flex-wrap: wrap; gap: 5px;">
-          <button class="rarity-btn" data-value="базовая">Базовая</button>
-          <button class="rarity-btn" data-value="необычная">Необычная</button>
-          <button class="rarity-btn" data-value="редкая">Редкая</button>
-          <button class="rarity-btn" data-value="легендарная">Легендарная</button>
-          <button class="rarity-btn" data-value="эпическая">Эпическая</button>
-          <button class="rarity-btn" data-value="лидерская">Лидерская</button>
+          <button class="rarity-btn" data-value="базовая">
+            <img src="test/images/CommonRarity.png" alt="Базовая">
+          </button>
+          <button class="rarity-btn" data-value="необычная">
+            <img src="test/images/UncommonRarity.png" alt="Необычная">
+          </button>
+          <button class="rarity-btn" data-value="редкая">
+            <img src="test/images/RareRarity.png" alt="Редкая">
+          </button>
+          <button class="rarity-btn" data-value="легендарная">
+            <img src="test/images/LegendRarity.png" alt="Легендарная">
+          </button>
+          <button class="rarity-btn" data-value="эпическая">
+            <img src="test/images/EpicRarity.png" alt="Эпическая">
+          </button>
+          <button class="rarity-btn" data-value="лидерская">
+            <img src="test/images/HeroRarity.png" alt="Лидерская">
+          </button>
         </div>
       </div>
       <div class="filters" style="display: flex; flex-wrap: wrap; gap: 10px;">
@@ -165,7 +182,8 @@
         </div>
         <select id="damageFilter">
           <option value="">Базовый урон</option>
-          <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+          <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
         </select>
         <select id="blockFilter">
           <option value="">Блок</option>
@@ -188,14 +206,11 @@
       </div>
       <h2>Карты</h2>
       <table style="display:none;" id="cardTableWrapper">
-        <thead>
-          <tr id="tableHead"></tr>
-        </thead>
+        <thead><tr id="tableHead"></tr></thead>
         <tbody id="cardTable"></tbody>
       </table>
     </div>
   </div>
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script>
 const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
 let selectedHeroes = [];
@@ -205,11 +220,7 @@ let fullData = [];
 function updateHeroButtons() {
   document.querySelectorAll('#heroList button').forEach(btn => {
     const name = btn.textContent;
-    if (selectedHeroes.includes(name)) {
-      btn.style.backgroundColor = (selectedHeroes[0] === name) ? 'gold' : '#ccf';
-    } else {
-      btn.style.backgroundColor = '#fff';
-    }
+    btn.style.backgroundColor = selectedHeroes.includes(name) ? ((selectedHeroes[0] === name) ? 'gold' : '#ccf') : '#fff';
   });
   document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
   document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
