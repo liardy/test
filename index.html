@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
+  <!-- Основные мета-теги и подключение библиотеки PapaParse -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Калькулятор карт</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
+    /* Стилизация страницы: layout, sidebar, таблица, переключатели и кнопки */
     body { display: flex; font-family: Arial, sans-serif; margin: 0; }
     .sidebar { width: 100px; padding: 10px; border-right: 1px solid #ccc; background-color: #f8f8f8; }
     .sidebar h2 { font-size: 16px; margin-bottom: 10px; }
@@ -35,6 +37,7 @@
   </style>
 </head>
 <body>
+  <!-- Боковая панель с переключателем режима и кнопками выбора героев -->
   <div class="sidebar">
     <div class="toggle-wrapper">
       <label for="modeToggle" class="filter-label">Поиск/Билд</label>
@@ -51,15 +54,22 @@
       <button id="elementalHeroBtn">Стихия</button>
     </div>
   </div>
+
+  <!-- Основная часть страницы -->
   <div class="main">
     <div class="topbar" id="filterControls">
+      <!-- Поле поиска -->
       <div style="display: flex; flex-direction: column;">
         <label class="filter-label" for="searchInput">Поиск</label>
         <input type="text" id="searchInput" class="search-input" placeholder="Введите текст...">
       </div>
     </div>
+
+    <!-- Инфо-блок и кнопка подтверждения в режиме билда -->
     <div id="infoBlock">Выберите лидера и 3х героев</div>
     <button id="confirmBtn" disabled>Подтвердить</button>
+
+    <!-- Таблица с картами -->
     <div id="filtersBlock">
       <h2>Карты</h2>
       <table style="display:none;" id="cardTableWrapper">
@@ -68,194 +78,222 @@
       </table>
     </div>
   </div>
+
+<!-- Скрипт JavaScript, управляющий всей логикой -->
 <script>
-const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
-let selectedHeroes = [];
-let fullData = [];
-let isBuildMode = false;
-let buildStage = 1;
-let savedStage1Cards = [];
+  // Переменные состояния
+  const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
+  let selectedHeroes = [];
+  let fullData = [];
+  let isBuildMode = false;
+  let buildStage = 1;
+  let savedStage1Cards = [];
 
-function updateHeroButtonStyles() {
-  const buttons = document.querySelectorAll("#heroList button");
-  buttons.forEach(btn => {
-    btn.classList.remove("leader", "active", "locked");
-    if (buildStage > 1) btn.classList.add("locked");
-  });
-
-  const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
-  const elementalBtn = document.getElementById("elementalHeroBtn");
-
-  if (isBuildMode) {
-    onlyHeroes.forEach((hero, idx) => {
-      const btn = Array.from(buttons).find(b => b.textContent === hero);
-      if (btn) {
-        if (idx === 0) btn.classList.add("leader");
-        else btn.classList.add("active");
-      }
+  // Обновляет стили кнопок героев в зависимости от выбранных и режима
+  function updateHeroButtonStyles() {
+    const buttons = document.querySelectorAll("#heroList button");
+    buttons.forEach(btn => {
+      btn.classList.remove("leader", "active", "locked");
+      if (buildStage > 1) btn.classList.add("locked");
     });
-    elementalBtn.classList.add("active");
-  } else {
-    selectedHeroes.forEach(hero => {
-      const btn = Array.from(buttons).find(b => b.textContent === hero);
-      if (btn) btn.classList.add("active");
-    });
-    elementalBtn.classList.toggle("active", selectedHeroes.includes("Стихия"));
-  }
-}
 
-function renderTable(data) {
-  const tableHead = document.getElementById("tableHead");
-  const cardTable = document.getElementById("cardTable");
-  tableHead.innerHTML = '';
-  cardTable.innerHTML = '';
-  if (data.length === 0) return;
-  Object.keys(data[0]).forEach(key => {
-    const th = document.createElement('th');
-    th.textContent = key;
-    tableHead.appendChild(th);
-  });
-  data.forEach(card => {
-    const tr = document.createElement('tr');
-    Object.values(card).forEach(value => {
-      const td = document.createElement('td');
-      td.textContent = value;
-      tr.appendChild(td);
-    });
-    if (buildStage === 2) {
-      tr.onclick = () => {
-        tr.classList.toggle("selected");
-        const selected = document.querySelectorAll("#cardTable tr.selected").length;
-        document.getElementById("confirmBtn").disabled = selected !== 2;
-      };
-    }
-    cardTable.appendChild(tr);
-  });
-}
+    const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
+    const elementalBtn = document.getElementById("elementalHeroBtn");
 
-function applyFilters() {
-  let filtered = [];
-  if (isBuildMode) {
-    if (buildStage === 1) {
-      filtered = fullData.filter(card => {
-        if (selectedHeroes.includes("Стихия") && card.HeroName === "Стихия" && card.Rarity.toLowerCase() === "базовая") return true;
-        if (selectedHeroes.includes(card.HeroName)) {
-          const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
-          const isLeader = onlyHeroes[0] === card.HeroName;
-          return card.Rarity.toLowerCase() === "базовая" || (isLeader && card.Rarity.toLowerCase() === "лидерская");
+    if (isBuildMode) {
+      onlyHeroes.forEach((hero, idx) => {
+        const btn = Array.from(buttons).find(b => b.textContent === hero);
+        if (btn) {
+          if (idx === 0) btn.classList.add("leader");
+          else btn.classList.add("active");
         }
-        return false;
       });
-    } else if (buildStage === 2) {
-      filtered = fullData.filter(card => {
-        return card.Rarity.toLowerCase() === "необычная" && selectedHeroes.includes(card.HeroName);
-      }).slice(0, 5);
-    }
-  } else {
-    if (selectedHeroes.length > 0) {
-      filtered = fullData.filter(card => selectedHeroes.includes(card.HeroName));
+      elementalBtn.classList.add("active");
+    } else {
+      selectedHeroes.forEach(hero => {
+        const btn = Array.from(buttons).find(b => b.textContent === hero);
+        if (btn) btn.classList.add("active");
+      });
+      elementalBtn.classList.toggle("active", selectedHeroes.includes("Стихия"));
     }
   }
-  document.getElementById('cardTableWrapper').style.display = filtered.length > 0 ? 'table' : 'none';
-  renderTable(filtered);
-}
 
-function toggleBuildMode() {
-  isBuildMode = document.getElementById("modeToggle").checked;
-  const filterControls = document.getElementById("filterControls");
-  const infoBlock = document.getElementById("infoBlock");
-  const confirmBtn = document.getElementById("confirmBtn");
-  const allHeroesBtn = document.getElementById("allHeroesBtn");
+  // Рендер таблицы карт
+  function renderTable(data) {
+    const tableHead = document.getElementById("tableHead");
+    const cardTable = document.getElementById("cardTable");
+    tableHead.innerHTML = '';
+    cardTable.innerHTML = '';
+    if (data.length === 0) return;
+    
+    // Заголовки
+    Object.keys(data[0]).forEach(key => {
+      const th = document.createElement('th');
+      th.textContent = key;
+      tableHead.appendChild(th);
+    });
 
-  if (isBuildMode) {
-    filterControls.style.display = "none";
-    infoBlock.style.display = "block";
-    confirmBtn.style.display = "inline-block";
-    allHeroesBtn.style.display = "none";
-    selectedHeroes = ["Стихия"];
-    buildStage = 1;
-  } else {
-    filterControls.style.display = "flex";
-    infoBlock.style.display = "none";
-    confirmBtn.style.display = "none";
-    allHeroesBtn.style.display = "block";
-    selectedHeroes = [];
-  }
-  updateHeroButtonStyles();
-  applyFilters();
-}
+    // Строки таблицы
+    data.forEach(card => {
+      const tr = document.createElement('tr');
+      Object.values(card).forEach(value => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        tr.appendChild(td);
+      });
 
-document.addEventListener("DOMContentLoaded", () => {
-  const heroList = document.getElementById('heroList');
-  const allHeroesBtn = document.getElementById('allHeroesBtn');
-  const elementalHeroBtn = document.getElementById('elementalHeroBtn');
-  const confirmBtn = document.getElementById('confirmBtn');
-  const modeToggle = document.getElementById('modeToggle');
-  const infoBlock = document.getElementById('infoBlock');
-
-  modeToggle.addEventListener('change', toggleBuildMode);
-
-  heroNames.forEach(hero => {
-    const btn = document.createElement('button');
-    btn.textContent = hero;
-    btn.onclick = () => {
-      if (buildStage > 1) return;
-      const index = selectedHeroes.indexOf(hero);
-      if (index >= 0) selectedHeroes.splice(index, 1);
-      else {
-        if (isBuildMode && selectedHeroes.filter(h => heroNames.includes(h)).length >= 4) return;
-        selectedHeroes.push(hero);
+      // Для второго этапа билда – выбор 2 карт
+      if (buildStage === 2) {
+        tr.onclick = () => {
+          tr.classList.toggle("selected");
+          const selected = document.querySelectorAll("#cardTable tr.selected").length;
+          document.getElementById("confirmBtn").disabled = selected !== 2;
+        };
       }
+      cardTable.appendChild(tr);
+    });
+  }
+
+  // Применение фильтров по выбранным героям и этапам
+  function applyFilters() {
+    let filtered = [];
+
+    if (isBuildMode) {
+      if (buildStage === 1) {
+        filtered = fullData.filter(card => {
+          if (selectedHeroes.includes("Стихия") && card.HeroName === "Стихия" && card.Rarity.toLowerCase() === "базовая") return true;
+          if (selectedHeroes.includes(card.HeroName)) {
+            const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
+            const isLeader = onlyHeroes[0] === card.HeroName;
+            return card.Rarity.toLowerCase() === "базовая" || (isLeader && card.Rarity.toLowerCase() === "лидерская");
+          }
+          return false;
+        });
+      } else if (buildStage === 2) {
+        filtered = fullData.filter(card =>
+          card.Rarity.toLowerCase() === "необычная" && selectedHeroes.includes(card.HeroName)
+        ).slice(0, 5);
+      }
+    } else {
+      if (selectedHeroes.length > 0) {
+        filtered = fullData.filter(card => selectedHeroes.includes(card.HeroName));
+      }
+    }
+
+    // Отображение таблицы только при наличии данных
+    document.getElementById('cardTableWrapper').style.display = filtered.length > 0 ? 'table' : 'none';
+    renderTable(filtered);
+  }
+
+  // Переключение между режимом поиска и билда
+  function toggleBuildMode() {
+    isBuildMode = document.getElementById("modeToggle").checked;
+    const filterControls = document.getElementById("filterControls");
+    const infoBlock = document.getElementById("infoBlock");
+    const confirmBtn = document.getElementById("confirmBtn");
+    const allHeroesBtn = document.getElementById("allHeroesBtn");
+
+    if (isBuildMode) {
+      filterControls.style.display = "none";
+      infoBlock.style.display = "block";
+      confirmBtn.style.display = "inline-block";
+      allHeroesBtn.style.display = "none";
+      selectedHeroes = ["Стихия"];
+      buildStage = 1;
+    } else {
+      filterControls.style.display = "flex";
+      infoBlock.style.display = "none";
+      confirmBtn.style.display = "none";
+      allHeroesBtn.style.display = "block";
+      selectedHeroes = [];
+    }
+
+    updateHeroButtonStyles();
+    applyFilters();
+  }
+
+  // Когда документ загружен — инициализация интерфейса
+  document.addEventListener("DOMContentLoaded", () => {
+    const heroList = document.getElementById('heroList');
+    const allHeroesBtn = document.getElementById('allHeroesBtn');
+    const elementalHeroBtn = document.getElementById('elementalHeroBtn');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const modeToggle = document.getElementById('modeToggle');
+    const infoBlock = document.getElementById('infoBlock');
+
+    // Слушатель переключателя режима
+    modeToggle.addEventListener('change', toggleBuildMode);
+
+    // Кнопки героев
+    heroNames.forEach(hero => {
+      const btn = document.createElement('button');
+      btn.textContent = hero;
+      btn.onclick = () => {
+        if (buildStage > 1) return;
+        const index = selectedHeroes.indexOf(hero);
+        if (index >= 0) selectedHeroes.splice(index, 1);
+        else {
+          if (isBuildMode && selectedHeroes.filter(h => heroNames.includes(h)).length >= 4) return;
+          selectedHeroes.push(hero);
+        }
+
+        updateHeroButtonStyles();
+        applyFilters();
+
+        if (isBuildMode) {
+          const ready = selectedHeroes.filter(h => heroNames.includes(h)).length === 4;
+          confirmBtn.disabled = !ready;
+          confirmBtn.classList.toggle("enabled", ready);
+        }
+      };
+      heroList.appendChild(btn);
+    });
+
+    // Кнопка "Все герои"
+    allHeroesBtn.onclick = () => {
+      if (isBuildMode) return;
+      if (selectedHeroes.length === heroNames.length + 1) selectedHeroes = [];
+      else selectedHeroes = [...heroNames, "Стихия"];
       updateHeroButtonStyles();
       applyFilters();
-      if (isBuildMode) {
-        confirmBtn.disabled = selectedHeroes.filter(h => heroNames.includes(h)).length !== 4;
-        confirmBtn.classList.toggle("enabled", !confirmBtn.disabled);
+    };
+
+    // Кнопка "Стихия"
+    elementalHeroBtn.onclick = () => {
+      if (isBuildMode && buildStage > 1) return;
+      if (selectedHeroes.includes("Стихия")) selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
+      else selectedHeroes.push("Стихия");
+      updateHeroButtonStyles();
+      applyFilters();
+    };
+
+    // Подтверждение первого этапа билда
+    confirmBtn.onclick = () => {
+      if (isBuildMode && buildStage === 1) {
+        savedStage1Cards = Array.from(document.querySelectorAll("#cardTable tr")).map(tr => tr.innerHTML);
+        buildStage = 2;
+        infoBlock.textContent = "Выберите 2 необычные карты";
+        updateHeroButtonStyles();
+        confirmBtn.disabled = true;
+        confirmBtn.classList.remove("enabled");
+        applyFilters();
       }
     };
-    heroList.appendChild(btn);
+
+    // Фильтр по поиску
+    document.getElementById('searchInput')?.addEventListener('input', applyFilters);
+
+    // Загрузка CSV-данных из Google Sheets через PapaParse
+    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
+      download: true,
+      header: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        fullData = results.data;
+        applyFilters();
+      }
+    });
   });
-
-  allHeroesBtn.onclick = () => {
-    if (isBuildMode) return;
-    if (selectedHeroes.length === heroNames.length + 1) selectedHeroes = [];
-    else selectedHeroes = [...heroNames, "Стихия"];
-    updateHeroButtonStyles();
-    applyFilters();
-  };
-
-  elementalHeroBtn.onclick = () => {
-    if (isBuildMode && buildStage > 1) return;
-    if (selectedHeroes.includes("Стихия")) selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
-    else selectedHeroes.push("Стихия");
-    updateHeroButtonStyles();
-    applyFilters();
-  };
-
-  confirmBtn.onclick = () => {
-    if (isBuildMode && buildStage === 1) {
-      savedStage1Cards = Array.from(document.querySelectorAll("#cardTable tr")).map(tr => tr.innerHTML);
-      buildStage = 2;
-      infoBlock.textContent = "Выберите 2 необычные карты";
-      updateHeroButtonStyles();
-      confirmBtn.disabled = true;
-      confirmBtn.classList.remove("enabled");
-      applyFilters();
-    }
-  };
-
-  document.getElementById('searchInput')?.addEventListener('input', applyFilters);
-
-  Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-      fullData = results.data;
-      applyFilters();
-    }
-  });
-});
 </script>
 </body>
 </html>
