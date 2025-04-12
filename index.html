@@ -35,6 +35,10 @@
       flex: 1;
       padding: 10px;
     }
+    <div id="buildInfoBlock" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+  <div style="font-size: 14px; font-weight: bold;">Выберите лидера и 3х героев</div>
+  <button id="confirmBuildBtn" style="padding: 6px 10px; font-size: 13px; cursor: pointer;">Подтвердить</button>
+  </div>
     table {
       width: 100%;
       border-collapse: collapse;
@@ -354,6 +358,63 @@ document.addEventListener("DOMContentLoaded", function () {
       });
     }
   });
+  const modeToggle = document.getElementById("modeToggle");
+const filterBlock = document.querySelector(".topbar").parentElement; // блок с фильтрами
+const buildInfoBlock = document.getElementById("buildInfoBlock");
+
+modeToggle.addEventListener("change", () => {
+  const isBuildMode = modeToggle.checked;
+
+  if (isBuildMode) {
+    // Скрываем фильтры
+    filterBlock.style.display = "none";
+    buildInfoBlock.style.display = "flex";
+
+    // Скрыть кнопку "Все"
+    document.getElementById("allHeroesBtn").style.display = "none";
+
+    // Включаем "Стихия"
+    if (!selectedHeroes.includes("Стихия")) {
+      selectedHeroes = ["Стихия"];
+    } else {
+      selectedHeroes = selectedHeroes.filter(h => h === "Стихия");
+    }
+
+    // Оставляем только базовую ценность
+    selectedRarities = ["базовая"];
+    document.querySelectorAll('.rarity-btn').forEach(btn => {
+      const rarity = btn.dataset.value;
+      if (rarity === "базовая") {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    });
+
+    updateHeroButtons();
+    applyFilters();
+
+  } else {
+    // Возвращаем всё как было
+    filterBlock.style.display = "block";
+    buildInfoBlock.style.display = "none";
+
+    document.getElementById("allHeroesBtn").style.display = "inline-block";
+
+    selectedHeroes = [];
+    selectedRarities = [];
+
+    document.querySelectorAll('.rarity-btn').forEach(btn => {
+      const rarity = btn.dataset.value;
+      selectedRarities.push(rarity);
+      btn.classList.add("active");
+    });
+
+    updateHeroButtons();
+    applyFilters();
+  }
+});
+
 });
 </script>
 </body>
