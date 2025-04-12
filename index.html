@@ -220,7 +220,7 @@ let fullData = [];
 function updateHeroButtons() {
   document.querySelectorAll('#heroList button').forEach(btn => {
     const name = btn.textContent;
-    btn.style.backgroundColor = selectedHeroes.includes(name) ? ((selectedHeroes[0] === name) ? 'gold' : '#ccf') : '#fff';
+    btn.style.backgroundColor = selectedHeroes.includes(name) ? '#ccf' : '#fff';
   });
   document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
   document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
@@ -290,7 +290,7 @@ document.addEventListener("DOMContentLoaded", function () {
       const index = selectedHeroes.indexOf(hero);
       if (index >= 0) {
         selectedHeroes.splice(index, 1);
-      } else if (selectedHeroes.filter(h => h !== "Стихия").length < 4) {
+      } else {
         selectedHeroes.push(hero);
       }
       updateHeroButtons();
