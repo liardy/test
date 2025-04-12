@@ -12,6 +12,7 @@
     .sidebar button { display: block; width: 100%; margin-bottom: 5px; padding: 4px; font-size: 13px; background: #fff; border: 1px solid #ccc; cursor: pointer; }
     .sidebar button.active { background-color: #ccf; }
     .sidebar button.leader { background-color: gold !important; }
+    .sidebar button.locked { pointer-events: none; opacity: 0.6; }
     .main { flex: 1; padding: 10px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border: 1px solid #ccc; padding: 5px; text-align: left; white-space: pre-wrap; word-break: break-word; }
@@ -27,7 +28,10 @@
     .switch input:checked + .slider:before { transform: translateX(16px); }
     #infoBlock { display: none; margin-bottom: 10px; font-weight: bold; }
     #confirmBtn { display: none; float: right; margin-bottom: 10px; }
+    #confirmBtn:disabled { background-color: #ccc; color: #666; cursor: not-allowed; }
+    #confirmBtn.enabled { background-color: #4CAF50; color: white; }
     #filterControls { display: flex; flex-direction: column; }
+    tr.selected { background-color: lightgreen; }
   </style>
 </head>
 <body>
@@ -55,7 +59,7 @@
       </div>
     </div>
     <div id="infoBlock">Выберите лидера и 3х героев</div>
-    <button id="confirmBtn">Подтвердить</button>
+    <button id="confirmBtn" disabled>Подтвердить</button>
     <div id="filtersBlock">
       <h2>Карты</h2>
       <table style="display:none;" id="cardTableWrapper">
@@ -69,10 +73,15 @@ const heroNames = ["Геоморф", "Центурия", "Пиромант", "А
 let selectedHeroes = [];
 let fullData = [];
 let isBuildMode = false;
+let buildStage = 1;
+let savedStage1Cards = [];
 
 function updateHeroButtonStyles() {
   const buttons = document.querySelectorAll("#heroList button");
-  buttons.forEach(btn => btn.classList.remove("leader", "active"));
+  buttons.forEach(btn => {
+    btn.classList.remove("leader", "active", "locked");
+    if (buildStage > 1) btn.classList.add("locked");
+  });
 
   const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
   const elementalBtn = document.getElementById("elementalHeroBtn");
@@ -113,6 +122,13 @@ function renderTable(data) {
       td.textContent = value;
       tr.appendChild(td);
     });
+    if (buildStage === 2) {
+      tr.onclick = () => {
+        tr.classList.toggle("selected");
+        const selected = document.querySelectorAll("#cardTable tr.selected").length;
+        document.getElementById("confirmBtn").disabled = selected !== 2;
+      };
+    }
     cardTable.appendChild(tr);
   });
 }
@@ -120,15 +136,21 @@ function renderTable(data) {
 function applyFilters() {
   let filtered = [];
   if (isBuildMode) {
-    filtered = fullData.filter(card => {
-      if (selectedHeroes.includes("Стихия") && card.HeroName === "Стихия" && card.Rarity.toLowerCase() === "базовая") return true;
-      if (selectedHeroes.includes(card.HeroName)) {
-        const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
-        const isLeader = onlyHeroes[0] === card.HeroName;
-        return card.Rarity.toLowerCase() === "базовая" || (isLeader && card.Rarity.toLowerCase() === "лидерская");
-      }
-      return false;
-    });
+    if (buildStage === 1) {
+      filtered = fullData.filter(card => {
+        if (selectedHeroes.includes("Стихия") && card.HeroName === "Стихия" && card.Rarity.toLowerCase() === "базовая") return true;
+        if (selectedHeroes.includes(card.HeroName)) {
+          const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
+          const isLeader = onlyHeroes[0] === card.HeroName;
+          return card.Rarity.toLowerCase() === "базовая" || (isLeader && card.Rarity.toLowerCase() === "лидерская");
+        }
+        return false;
+      });
+    } else if (buildStage === 2) {
+      filtered = fullData.filter(card => {
+        return card.Rarity.toLowerCase() === "необычная" && selectedHeroes.includes(card.HeroName);
+      }).slice(0, 5);
+    }
   } else {
     if (selectedHeroes.length > 0) {
       filtered = fullData.filter(card => selectedHeroes.includes(card.HeroName));
@@ -151,6 +173,7 @@ function toggleBuildMode() {
     confirmBtn.style.display = "inline-block";
     allHeroesBtn.style.display = "none";
     selectedHeroes = ["Стихия"];
+    buildStage = 1;
   } else {
     filterControls.style.display = "flex";
     infoBlock.style.display = "none";
@@ -166,7 +189,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const heroList = document.getElementById('heroList');
   const allHeroesBtn = document.getElementById('allHeroesBtn');
   const elementalHeroBtn = document.getElementById('elementalHeroBtn');
+  const confirmBtn = document.getElementById('confirmBtn');
   const modeToggle = document.getElementById('modeToggle');
+  const infoBlock = document.getElementById('infoBlock');
 
   modeToggle.addEventListener('change', toggleBuildMode);
 
@@ -174,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const btn = document.createElement('button');
     btn.textContent = hero;
     btn.onclick = () => {
+      if (buildStage > 1) return;
       const index = selectedHeroes.indexOf(hero);
       if (index >= 0) selectedHeroes.splice(index, 1);
       else {
@@ -182,6 +208,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       updateHeroButtonStyles();
       applyFilters();
+      if (isBuildMode) {
+        confirmBtn.disabled = selectedHeroes.filter(h => heroNames.includes(h)).length !== 4;
+        confirmBtn.classList.toggle("enabled", !confirmBtn.disabled);
+      }
     };
     heroList.appendChild(btn);
   });
@@ -195,11 +225,23 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   elementalHeroBtn.onclick = () => {
-    if (isBuildMode) return;
+    if (isBuildMode && buildStage > 1) return;
     if (selectedHeroes.includes("Стихия")) selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
     else selectedHeroes.push("Стихия");
     updateHeroButtonStyles();
     applyFilters();
+  };
+
+  confirmBtn.onclick = () => {
+    if (isBuildMode && buildStage === 1) {
+      savedStage1Cards = Array.from(document.querySelectorAll("#cardTable tr")).map(tr => tr.innerHTML);
+      buildStage = 2;
+      infoBlock.textContent = "Выберите 2 необычные карты";
+      updateHeroButtonStyles();
+      confirmBtn.disabled = true;
+      confirmBtn.classList.remove("enabled");
+      applyFilters();
+    }
   };
 
   document.getElementById('searchInput')?.addEventListener('input', applyFilters);
