@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Калькулятор карт</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
@@ -35,10 +35,6 @@
       flex: 1;
       padding: 10px;
     }
-    <div id="buildInfoBlock" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-  <div style="font-size: 14px; font-weight: bold;">Выберите лидера и 3х героев</div>
-  <button id="confirmBuildBtn" style="padding: 6px 10px; font-size: 13px; cursor: pointer;">Подтвердить</button>
-  </div>
     table {
       width: 100%;
       border-collapse: collapse;
@@ -130,13 +126,13 @@
     <div class="toggle-wrapper">
       <label for="modeToggle" class="filter-label">Поиск/Билд</label>
       <label class="switch">
-        <input type="checkbox" id="modeToggle">
+        <input type="checkbox" id="modeToggle" />
         <span class="slider"></span>
       </label>
     </div>
     <h2>Герои</h2>
     <div id="heroList"></div>
-    <hr style="margin: 10px 0;">
+    <hr style="margin: 10px 0;" />
     <div>
       <button id="allHeroesBtn">Все</button>
       <button id="elementalHeroBtn">Стихия</button>
@@ -146,31 +142,19 @@
     <div class="topbar">
       <div style="display: flex; flex-direction: column;">
         <label class="filter-label" for="searchInput">Поиск</label>
-        <input type="text" id="searchInput" class="search-input" placeholder="Введите текст...">
+        <input type="text" id="searchInput" class="search-input" placeholder="Введите текст..." />
       </div>
     </div>
     <div style="margin-bottom: 10px;">
       <div style="display: flex; flex-direction: column; margin-bottom: 5px;">
         <label class="filter-label">Ценность</label>
         <div id="rarityButtons" style="display: flex; flex-wrap: wrap; gap: 5px;">
-          <button class="rarity-btn" data-value="базовая">
-            <img src="images/CommonRarity.png" alt="Базовая">
-          </button>
-          <button class="rarity-btn" data-value="необычная">
-            <img src="images/UncommonRarity.png" alt="Необычная">
-          </button>
-          <button class="rarity-btn" data-value="редкая">
-            <img src="images/RareRarity.png" alt="Редкая">
-          </button>
-          <button class="rarity-btn" data-value="легендарная">
-            <img src="images/LegendRarity.png" alt="Легендарная">
-          </button>
-          <button class="rarity-btn" data-value="эпическая">
-            <img src="images/EpicRarity.png" alt="Эпическая">
-          </button>
-          <button class="rarity-btn" data-value="лидерская">
-            <img src="images/HeroRarity.png" alt="Лидерская">
-          </button>
+          <button class="rarity-btn" data-value="базовая"><img src="images/CommonRarity.png" alt="Базовая" /></button>
+          <button class="rarity-btn" data-value="необычная"><img src="images/UncommonRarity.png" alt="Необычная" /></button>
+          <button class="rarity-btn" data-value="редкая"><img src="images/RareRarity.png" alt="Редкая" /></button>
+          <button class="rarity-btn" data-value="легендарная"><img src="images/LegendRarity.png" alt="Легендарная" /></button>
+          <button class="rarity-btn" data-value="эпическая"><img src="images/EpicRarity.png" alt="Эпическая" /></button>
+          <button class="rarity-btn" data-value="лидерская"><img src="images/HeroRarity.png" alt="Лидерская" /></button>
         </div>
       </div>
       <div class="filters" style="display: flex; flex-wrap: wrap; gap: 10px;">
@@ -208,6 +192,13 @@
           <option>Прицельная</option>
         </select>
       </div>
+
+      <!-- 🔻 ДОБАВЛЕННЫЙ ИНФО-БЛОК -->
+      <div id="buildInfoBlock" style="display: none; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <div style="font-size: 14px; font-weight: bold;">Выберите лидера и 3х героев</div>
+        <button id="confirmBuildBtn" style="padding: 6px 10px; font-size: 13px; cursor: pointer;">Подтвердить</button>
+      </div>
+
       <h2>Карты</h2>
       <table style="display:none;" id="cardTableWrapper">
         <thead><tr id="tableHead"></tr></thead>
@@ -215,207 +206,193 @@
       </table>
     </div>
   </div>
-<script>
-const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
-let selectedHeroes = [];
-let selectedRarities = [];
-let fullData = [];
 
-function updateHeroButtons() {
-  document.querySelectorAll('#heroList button').forEach(btn => {
-    const name = btn.textContent;
-    btn.style.backgroundColor = selectedHeroes.includes(name) ? '#ccf' : '#fff';
-  });
-  document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
-  document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
-}
+  <script>
+    const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
+    let selectedHeroes = [];
+    let selectedRarities = [];
+    let fullData = [];
 
-function renderTable(data) {
-  const tableHead = document.getElementById("tableHead");
-  const cardTable = document.getElementById("cardTable");
-  tableHead.innerHTML = '';
-  cardTable.innerHTML = '';
-
-  if (data.length === 0) return;
-  Object.keys(data[0]).forEach(key => {
-    const th = document.createElement('th');
-    th.textContent = key;
-    tableHead.appendChild(th);
-  });
-
-  data.forEach(card => {
-    const tr = document.createElement('tr');
-    Object.values(card).forEach(value => {
-      const td = document.createElement('td');
-      td.textContent = value;
-      tr.appendChild(td);
-    });
-    cardTable.appendChild(tr);
-  });
-}
-
-function applyFilters() {
-  let filtered = [...fullData];
-  if (selectedHeroes.length > 0) {
-    filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
-  }
-  if (selectedRarities.length > 0) {
-    filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
-  }
-  const element = document.getElementById("elementFilter").value;
-  const dmg = document.getElementById("damageFilter").value;
-  const block = document.getElementById("blockFilter").value;
-  const blockType = document.getElementById("blockTypeFilter").value;
-  const direction = document.getElementById("directionFilter").value;
-  const search = document.getElementById("searchInput").value.toLowerCase();
-
-  if (element) filtered = filtered.filter(card => card.Element === element);
-  if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
-  if (block) filtered = filtered.filter(card => card.BlockValue === block);
-  if (blockType) filtered = filtered.filter(card => card.Type === blockType);
-  if (direction) filtered = filtered.filter(card => card.Type === direction);
-  if (search) filtered = filtered.filter(card => {
-    return ['SlowText','FastText','InstantText'].some(key => (card[key] || '').toLowerCase().includes(search));
-  });
-
-  document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
-  renderTable(filtered);
-}
-
-document.addEventListener("DOMContentLoaded", function () {
-  const heroList = document.getElementById('heroList');
-  const allHeroesBtn = document.getElementById('allHeroesBtn');
-  const elementalHeroBtn = document.getElementById('elementalHeroBtn');
-
-  heroNames.forEach(hero => {
-    const btn = document.createElement('button');
-    btn.textContent = hero;
-    btn.onclick = () => {
-      const index = selectedHeroes.indexOf(hero);
-      if (index >= 0) {
-        selectedHeroes.splice(index, 1);
-      } else {
-        selectedHeroes.push(hero);
-      }
-      updateHeroButtons();
-      applyFilters();
-    };
-    heroList.appendChild(btn);
-  });
-
-  allHeroesBtn.onclick = () => {
-    if (selectedHeroes.length === heroNames.length + 1) {
-      selectedHeroes = [];
-    } else {
-      selectedHeroes = [...heroNames, "Стихия"];
-    }
-    updateHeroButtons();
-    applyFilters();
-  };
-
-  elementalHeroBtn.onclick = () => {
-    if (selectedHeroes.includes("Стихия")) {
-      selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
-    } else {
-      selectedHeroes.push("Стихия");
-    }
-    updateHeroButtons();
-    applyFilters();
-  };
-
-  document.querySelectorAll('.filters select').forEach(select => {
-    select.addEventListener('change', applyFilters);
-  });
-  document.getElementById('searchInput').addEventListener('input', applyFilters);
-
-  Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-      fullData = results.data;
-      document.querySelectorAll('.rarity-btn').forEach(btn => {
-        const rarity = btn.dataset.value;
-        selectedRarities.push(rarity);
-        btn.classList.add('active');
+    function updateHeroButtons() {
+      document.querySelectorAll('#heroList button').forEach(btn => {
+        const name = btn.textContent;
+        btn.style.backgroundColor = selectedHeroes.includes(name) ? '#ccf' : '#fff';
       });
-      renderTable(fullData);
-      applyFilters();
+      document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
+      document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
+    }
 
-      document.querySelectorAll('.rarity-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const rarity = btn.dataset.value;
-          const index = selectedRarities.indexOf(rarity);
+    function renderTable(data) {
+      const tableHead = document.getElementById("tableHead");
+      const cardTable = document.getElementById("cardTable");
+      tableHead.innerHTML = '';
+      cardTable.innerHTML = '';
+
+      if (data.length === 0) return;
+      Object.keys(data[0]).forEach(key => {
+        const th = document.createElement('th');
+        th.textContent = key;
+        tableHead.appendChild(th);
+      });
+
+      data.forEach(card => {
+        const tr = document.createElement('tr');
+        Object.values(card).forEach(value => {
+          const td = document.createElement('td');
+          td.textContent = value;
+          tr.appendChild(td);
+        });
+        cardTable.appendChild(tr);
+      });
+    }
+
+    function applyFilters() {
+      let filtered = [...fullData];
+      if (selectedHeroes.length > 0) {
+        filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
+      }
+      if (selectedRarities.length > 0) {
+        filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
+      }
+      const element = document.getElementById("elementFilter").value;
+      const dmg = document.getElementById("damageFilter").value;
+      const block = document.getElementById("blockFilter").value;
+      const blockType = document.getElementById("blockTypeFilter").value;
+      const direction = document.getElementById("directionFilter").value;
+      const search = document.getElementById("searchInput").value.toLowerCase();
+
+      if (element) filtered = filtered.filter(card => card.Element === element);
+      if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
+      if (block) filtered = filtered.filter(card => card.BlockValue === block);
+      if (blockType) filtered = filtered.filter(card => card.Type === blockType);
+      if (direction) filtered = filtered.filter(card => card.Type === direction);
+      if (search) filtered = filtered.filter(card =>
+        ['SlowText','FastText','InstantText'].some(key => (card[key] || '').toLowerCase().includes(search))
+      );
+
+      document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
+      renderTable(filtered);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      const heroList = document.getElementById('heroList');
+      const allHeroesBtn = document.getElementById('allHeroesBtn');
+      const elementalHeroBtn = document.getElementById('elementalHeroBtn');
+
+      heroNames.forEach(hero => {
+        const btn = document.createElement('button');
+        btn.textContent = hero;
+        btn.onclick = () => {
+          const index = selectedHeroes.indexOf(hero);
           if (index >= 0) {
-            selectedRarities.splice(index, 1);
-            btn.classList.remove('active');
+            selectedHeroes.splice(index, 1);
           } else {
+            selectedHeroes.push(hero);
+          }
+          updateHeroButtons();
+          applyFilters();
+        };
+        heroList.appendChild(btn);
+      });
+
+      allHeroesBtn.onclick = () => {
+        if (selectedHeroes.length === heroNames.length + 1) {
+          selectedHeroes = [];
+        } else {
+          selectedHeroes = [...heroNames, "Стихия"];
+        }
+        updateHeroButtons();
+        applyFilters();
+      };
+
+      elementalHeroBtn.onclick = () => {
+        if (selectedHeroes.includes("Стихия")) {
+          selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
+        } else {
+          selectedHeroes.push("Стихия");
+        }
+        updateHeroButtons();
+        applyFilters();
+      };
+
+      document.querySelectorAll('.filters select').forEach(select => {
+        select.addEventListener('change', applyFilters);
+      });
+      document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+      Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          fullData = results.data;
+          document.querySelectorAll('.rarity-btn').forEach(btn => {
+            const rarity = btn.dataset.value;
             selectedRarities.push(rarity);
             btn.classList.add('active');
-          }
+          });
+          renderTable(fullData);
           applyFilters();
-        });
+
+          document.querySelectorAll('.rarity-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const rarity = btn.dataset.value;
+              const index = selectedRarities.indexOf(rarity);
+              if (index >= 0) {
+                selectedRarities.splice(index, 1);
+                btn.classList.remove('active');
+              } else {
+                selectedRarities.push(rarity);
+                btn.classList.add('active');
+              }
+              applyFilters();
+            });
+          });
+        }
       });
-    }
-  });
-  const modeToggle = document.getElementById("modeToggle");
-const filterBlock = document.querySelector(".topbar").parentElement; // блок с фильтрами
-const buildInfoBlock = document.getElementById("buildInfoBlock");
 
-modeToggle.addEventListener("change", () => {
-  const isBuildMode = modeToggle.checked;
+      // 🔻 Toggle логика для режима "Билд"
+      const modeToggle = document.getElementById("modeToggle");
+      const filterBlock = document.querySelector(".topbar").parentElement;
+      const buildInfoBlock = document.getElementById("buildInfoBlock");
 
-  if (isBuildMode) {
-    // Скрываем фильтры
-    filterBlock.style.display = "none";
-    buildInfoBlock.style.display = "flex";
+      modeToggle.addEventListener("change", () => {
+        const isBuildMode = modeToggle.checked;
 
-    // Скрыть кнопку "Все"
-    document.getElementById("allHeroesBtn").style.display = "none";
+        if (isBuildMode) {
+          filterBlock.style.display = "none";
+          document.getElementById("allHeroesBtn").style.display = "none";
+          buildInfoBlock.style.display = "flex";
 
-    // Включаем "Стихия"
-    if (!selectedHeroes.includes("Стихия")) {
-      selectedHeroes = ["Стихия"];
-    } else {
-      selectedHeroes = selectedHeroes.filter(h => h === "Стихия");
-    }
+          selectedHeroes = ["Стихия"];
+          updateHeroButtons();
 
-    // Оставляем только базовую ценность
-    selectedRarities = ["базовая"];
-    document.querySelectorAll('.rarity-btn').forEach(btn => {
-      const rarity = btn.dataset.value;
-      if (rarity === "базовая") {
-        btn.classList.add("active");
-      } else {
-        btn.classList.remove("active");
-      }
+          selectedRarities = ["базовая"];
+          document.querySelectorAll('.rarity-btn').forEach(btn => {
+            const rarity = btn.dataset.value;
+            btn.classList.toggle("active", rarity === "базовая");
+          });
+
+          applyFilters();
+        } else {
+          filterBlock.style.display = "block";
+          document.getElementById("allHeroesBtn").style.display = "inline-block";
+          buildInfoBlock.style.display = "none";
+
+          selectedHeroes = [];
+          updateHeroButtons();
+
+          selectedRarities = [];
+          document.querySelectorAll('.rarity-btn').forEach(btn => {
+            const rarity = btn.dataset.value;
+            selectedRarities.push(rarity);
+            btn.classList.add("active");
+          });
+
+          applyFilters();
+        }
+      });
     });
-
-    updateHeroButtons();
-    applyFilters();
-
-  } else {
-    // Возвращаем всё как было
-    filterBlock.style.display = "block";
-    buildInfoBlock.style.display = "none";
-
-    document.getElementById("allHeroesBtn").style.display = "inline-block";
-
-    selectedHeroes = [];
-    selectedRarities = [];
-
-    document.querySelectorAll('.rarity-btn').forEach(btn => {
-      const rarity = btn.dataset.value;
-      selectedRarities.push(rarity);
-      btn.classList.add("active");
-    });
-
-    updateHeroButtons();
-    applyFilters();
-  }
-});
-
-});
-</script>
+  </script>
 </body>
 </html>
