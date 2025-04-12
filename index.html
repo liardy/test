@@ -223,6 +223,7 @@ let buildSelectedCards = [];
 let buildFinalCards = [];
 let buildLeader = null;
 let buildInfoDiv, confirmBtn;
+let includeStihia = false;
 
 function updateHeroButtons() {
   document.querySelectorAll('#heroList button').forEach(btn => {
@@ -235,11 +236,14 @@ function updateHeroButtons() {
       btn.disabled = false;
     }
   });
-  document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
-  document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
+  document.getElementById("elementalHeroBtn").style.backgroundColor = includeStihia ? '#ccf' : '#fff';
+  document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length && includeStihia) ? '#ccf' : '#fff';
 }
 
 function createBuildUI() {
+  const mainWrapper = document.querySelector('.main > div');
+  if (!mainWrapper) return; // safety check if DOM not ready
+
   buildInfoDiv = document.createElement('div');
   buildInfoDiv.style.display = 'flex';
   buildInfoDiv.style.justifyContent = 'space-between';
@@ -263,7 +267,7 @@ function createBuildUI() {
 
   buildInfoDiv.appendChild(label);
   buildInfoDiv.appendChild(confirmBtn);
-  document.querySelector('.main > div').prepend(buildInfoDiv);
+  mainWrapper.prepend(buildInfoDiv);
   confirmBtn.onclick = handleBuildConfirm;
 }
 
@@ -274,8 +278,7 @@ function setBuildMode(on) {
   buildSelectedCards = [];
   buildFinalCards = [];
   buildLeader = null;
-  document.getElementById("elementalHeroBtn").style.backgroundColor = '#ccf';
-  if (!selectedHeroes.includes("Стихия")) selectedHeroes.push("Стихия");
+  includeStihia = true;
 
   const filters = document.querySelector('.filters').parentElement;
   const allBtn = document.getElementById("allHeroesBtn");
@@ -294,104 +297,30 @@ function setBuildMode(on) {
     searchDiv.style.display = '';
     if (buildInfoDiv) buildInfoDiv.remove();
     selectedHeroes = [];
+    includeStihia = false;
     updateHeroButtons();
     applyFilters();
   }
 }
 
-function handleBuildConfirm() {
-  if (buildStage === 0) {
-    buildStage = 1;
-    buildInfoDiv.querySelector('#buildInfoText').value = 'Выберите 2 необычные карты';
-    buildFinalCards = fullData.filter(card =>
+function applyFilters() {
+  let filtered;
+  if (isBuildMode && buildStage === 0) {
+    filtered = fullData.filter(card =>
       (selectedHeroes.includes(card.HeroName) && card.Rarity?.toLowerCase() === 'базовая') ||
       (card.HeroName === buildLeader && card.Rarity?.toLowerCase() === 'лидерская') ||
-      (card.HeroName === 'Стихия' && card.Rarity?.toLowerCase() === 'базовая')
+      (card.HeroName === 'Стихия' && includeStihia && card.Rarity?.toLowerCase() === 'базовая')
     );
-    buildSelectedCards = [];
-    renderTable(getBuildStageCards('необычная'));
-  } else if (buildStage >= 1 && buildStage <= 4) {
-    buildFinalCards.push(...buildSelectedCards);
-    buildStage++;
-    const stages = ['необычная', 'редкая', 'легендарная', 'эпическая'];
-    const prompts = [
-      'Выберите 2 редкие карты',
-      'Выберите 2 легендарные карты',
-      'Выберите 2 эпические карты',
-      'Итоговый билд готов'
-    ];
-    if (buildStage <= 4) {
-      buildInfoDiv.querySelector('#buildInfoText').value = prompts[buildStage - 1];
-      buildSelectedCards = [];
-      renderTable(getBuildStageCards(stages[buildStage - 1]));
-    } else {
-      buildFinalCards.push(...buildSelectedCards);
-      buildInfoDiv.querySelector('#buildInfoText').value = 'Итоговый билд готов';
-      renderTable(buildFinalCards);
-      confirmBtn.disabled = true;
-    }
-  }
-}
-
-function getBuildStageCards(rarity) {
-  return fullData.filter(card =>
-    (selectedHeroes.includes(card.HeroName) && card.Rarity?.toLowerCase() === rarity) ||
-    (card.HeroName === 'Стихия' && card.Rarity?.toLowerCase() === rarity)
-  ).slice(0, 5);
-}
-
-function renderTable(data) {
-  const tableHead = document.getElementById("tableHead");
-  const cardTable = document.getElementById("cardTable");
-  tableHead.innerHTML = '';
-  cardTable.innerHTML = '';
-  if (data.length === 0) return;
-  Object.keys(data[0]).forEach(key => {
-    const th = document.createElement('th');
-    th.textContent = key;
-    tableHead.appendChild(th);
-  });
-  data.forEach(card => {
-    const tr = document.createElement('tr');
-    Object.values(card).forEach(value => {
-      const td = document.createElement('td');
-      td.textContent = value;
-      tr.appendChild(td);
-    });
-    if (isBuildMode && buildStage >= 1 && buildStage <= 4) {
-      tr.style.cursor = 'pointer';
-      tr.onclick = () => {
-        if (buildSelectedCards.includes(card)) {
-          buildSelectedCards = buildSelectedCards.filter(c => c !== card);
-          tr.style.backgroundColor = '';
-        } else if (buildSelectedCards.length < 2) {
-          buildSelectedCards.push(card);
-          tr.style.backgroundColor = '#ccf';
-        }
-        confirmBtn.disabled = buildSelectedCards.length !== 2;
-      };
-    }
-    cardTable.appendChild(tr);
-  });
-  document.getElementById('cardTableWrapper').style.display = 'table';
-}
-
-function applyFilters() {
-  if (isBuildMode && buildStage === 0) {
-    let filtered = fullData.filter(card =>
-      (selectedHeroes.includes(card.HeroName) && card.Rarity?.toLowerCase() === 'базовая') ||
-      (card.HeroName === 'Стихия' && card.Rarity?.toLowerCase() === 'базовая')
-    );
-    if (buildLeader) {
-      filtered = filtered.concat(fullData.filter(card => card.HeroName === buildLeader && card.Rarity?.toLowerCase() === 'лидерская'));
-    }
     renderTable(filtered);
     confirmBtn.disabled = selectedHeroes.length !== 4;
     return;
   }
-  let filtered = [...fullData];
+  filtered = [...fullData];
   if (selectedHeroes.length > 0) {
     filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
+  }
+  if (includeStihia) {
+    filtered = filtered.concat(fullData.filter(card => card.HeroName === 'Стихия'));
   }
   if (selectedRarities.length > 0) {
     filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
@@ -402,6 +331,7 @@ function applyFilters() {
   const blockType = document.getElementById("blockTypeFilter").value;
   const direction = document.getElementById("directionFilter").value;
   const search = document.getElementById("searchInput").value.toLowerCase();
+
   if (element) filtered = filtered.filter(card => card.Element === element);
   if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
   if (block) filtered = filtered.filter(card => card.BlockValue === block);
@@ -410,105 +340,12 @@ function applyFilters() {
   if (search) filtered = filtered.filter(card => {
     return ['SlowText','FastText','InstantText'].some(key => (card[key] || '').toLowerCase().includes(search));
   });
-  document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
+
+  document.getElementById('cardTableWrapper').style.display = filtered.length > 0 ? 'table' : 'none';
   renderTable(filtered);
 }
-
-document.addEventListener("DOMContentLoaded", function () {
-  const heroList = document.getElementById('heroList');
-  const allHeroesBtn = document.getElementById('allHeroesBtn');
-  const elementalHeroBtn = document.getElementById('elementalHeroBtn');
-
-  heroNames.forEach(hero => {
-    const btn = document.createElement('button');
-    btn.textContent = hero;
-    btn.onclick = () => {
-      const index = selectedHeroes.indexOf(hero);
-      if (isBuildMode) {
-        if (index >= 0) {
-          selectedHeroes.splice(index, 1);
-          if (hero === buildLeader) buildLeader = null;
-        } else if (selectedHeroes.length < 4) {
-          selectedHeroes.push(hero);
-          if (!buildLeader) buildLeader = hero;
-        }
-        updateHeroButtons();
-        applyFilters();
-        confirmBtn.disabled = selectedHeroes.length !== 4;
-      } else {
-        if (index >= 0) {
-          selectedHeroes.splice(index, 1);
-        } else {
-          selectedHeroes.push(hero);
-        }
-        updateHeroButtons();
-        applyFilters();
-      }
-    };
-    heroList.appendChild(btn);
-  });
-
-  allHeroesBtn.onclick = () => {
-    if (selectedHeroes.length === heroNames.length + 1) {
-      selectedHeroes = [];
-    } else {
-      selectedHeroes = [...heroNames, "Стихия"];
-    }
-    updateHeroButtons();
-    applyFilters();
-  };
-
-  elementalHeroBtn.onclick = () => {
-    if (selectedHeroes.includes("Стихия")) {
-      selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
-    } else {
-      selectedHeroes.push("Стихия");
-    }
-    updateHeroButtons();
-    applyFilters();
-  };
-
-  document.querySelectorAll('.filters select').forEach(select => {
-    select.addEventListener('change', applyFilters);
-  });
-  document.getElementById('searchInput').addEventListener('input', applyFilters);
-
-  document.getElementById('modeToggle').addEventListener('change', e => {
-    setBuildMode(e.target.checked);
-  });
-
-  Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-      fullData = results.data;
-      document.querySelectorAll('.rarity-btn').forEach(btn => {
-        const rarity = btn.dataset.value;
-        selectedRarities.push(rarity);
-        btn.classList.add('active');
-      });
-      renderTable(fullData);
-      applyFilters();
-
-      document.querySelectorAll('.rarity-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const rarity = btn.dataset.value;
-          const index = selectedRarities.indexOf(rarity);
-          if (index >= 0) {
-            selectedRarities.splice(index, 1);
-            btn.classList.remove('active');
-          } else {
-            selectedRarities.push(rarity);
-            btn.classList.add('active');
-          }
-          applyFilters();
-        });
-      });
-    }
-  });
-});
 </script>
+
 
 </body>
 </html>
