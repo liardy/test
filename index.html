@@ -211,19 +211,133 @@
       </table>
     </div>
   </div>
+
 <script>
 const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
 let selectedHeroes = [];
 let selectedRarities = [];
 let fullData = [];
+let isBuildMode = false;
+let buildStage = 0;
+let buildSelectedCards = [];
+let buildFinalCards = [];
+let buildLeader = null;
+let buildInfoDiv, confirmBtn;
 
 function updateHeroButtons() {
   document.querySelectorAll('#heroList button').forEach(btn => {
     const name = btn.textContent;
-    btn.style.backgroundColor = selectedHeroes.includes(name) ? '#ccf' : '#fff';
+    if (isBuildMode) {
+      btn.style.backgroundColor = name === buildLeader ? 'gold' : selectedHeroes.includes(name) ? '#ccf' : '#fff';
+      btn.disabled = buildStage > 0;
+    } else {
+      btn.style.backgroundColor = selectedHeroes.includes(name) ? '#ccf' : '#fff';
+      btn.disabled = false;
+    }
   });
   document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
   document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
+}
+
+function createBuildUI() {
+  buildInfoDiv = document.createElement('div');
+  buildInfoDiv.style.display = 'flex';
+  buildInfoDiv.style.justifyContent = 'space-between';
+  buildInfoDiv.style.alignItems = 'center';
+  buildInfoDiv.style.marginBottom = '10px';
+
+  const label = document.createElement('input');
+  label.type = 'text';
+  label.id = 'buildInfoText';
+  label.value = 'Выберите лидера и 3х героев';
+  label.disabled = true;
+  label.style.flex = '1';
+  label.style.marginRight = '10px';
+  label.style.padding = '6px';
+
+  confirmBtn = document.createElement('button');
+  confirmBtn.textContent = 'Подтвердить';
+  confirmBtn.disabled = true;
+  confirmBtn.style.padding = '6px 12px';
+  confirmBtn.style.cursor = 'pointer';
+
+  buildInfoDiv.appendChild(label);
+  buildInfoDiv.appendChild(confirmBtn);
+  document.querySelector('.main > div').prepend(buildInfoDiv);
+  confirmBtn.onclick = handleBuildConfirm;
+}
+
+function setBuildMode(on) {
+  isBuildMode = on;
+  buildStage = 0;
+  selectedHeroes = [];
+  buildSelectedCards = [];
+  buildFinalCards = [];
+  buildLeader = null;
+  document.getElementById("elementalHeroBtn").style.backgroundColor = '#ccf';
+  if (!selectedHeroes.includes("Стихия")) selectedHeroes.push("Стихия");
+
+  const filters = document.querySelector('.filters').parentElement;
+  const allBtn = document.getElementById("allHeroesBtn");
+  const searchDiv = document.querySelector('.topbar');
+
+  if (on) {
+    filters.style.display = 'none';
+    allBtn.style.display = 'none';
+    searchDiv.style.display = 'none';
+    createBuildUI();
+    updateHeroButtons();
+    applyFilters();
+  } else {
+    filters.style.display = '';
+    allBtn.style.display = '';
+    searchDiv.style.display = '';
+    if (buildInfoDiv) buildInfoDiv.remove();
+    selectedHeroes = [];
+    updateHeroButtons();
+    applyFilters();
+  }
+}
+
+function handleBuildConfirm() {
+  if (buildStage === 0) {
+    buildStage = 1;
+    buildInfoDiv.querySelector('#buildInfoText').value = 'Выберите 2 необычные карты';
+    buildFinalCards = fullData.filter(card =>
+      (selectedHeroes.includes(card.HeroName) && card.Rarity?.toLowerCase() === 'базовая') ||
+      (card.HeroName === buildLeader && card.Rarity?.toLowerCase() === 'лидерская') ||
+      (card.HeroName === 'Стихия' && card.Rarity?.toLowerCase() === 'базовая')
+    );
+    buildSelectedCards = [];
+    renderTable(getBuildStageCards('необычная'));
+  } else if (buildStage >= 1 && buildStage <= 4) {
+    buildFinalCards.push(...buildSelectedCards);
+    buildStage++;
+    const stages = ['необычная', 'редкая', 'легендарная', 'эпическая'];
+    const prompts = [
+      'Выберите 2 редкие карты',
+      'Выберите 2 легендарные карты',
+      'Выберите 2 эпические карты',
+      'Итоговый билд готов'
+    ];
+    if (buildStage <= 4) {
+      buildInfoDiv.querySelector('#buildInfoText').value = prompts[buildStage - 1];
+      buildSelectedCards = [];
+      renderTable(getBuildStageCards(stages[buildStage - 1]));
+    } else {
+      buildFinalCards.push(...buildSelectedCards);
+      buildInfoDiv.querySelector('#buildInfoText').value = 'Итоговый билд готов';
+      renderTable(buildFinalCards);
+      confirmBtn.disabled = true;
+    }
+  }
+}
+
+function getBuildStageCards(rarity) {
+  return fullData.filter(card =>
+    (selectedHeroes.includes(card.HeroName) && card.Rarity?.toLowerCase() === rarity) ||
+    (card.HeroName === 'Стихия' && card.Rarity?.toLowerCase() === rarity)
+  ).slice(0, 5);
 }
 
 function renderTable(data) {
@@ -231,14 +345,12 @@ function renderTable(data) {
   const cardTable = document.getElementById("cardTable");
   tableHead.innerHTML = '';
   cardTable.innerHTML = '';
-
   if (data.length === 0) return;
   Object.keys(data[0]).forEach(key => {
     const th = document.createElement('th');
     th.textContent = key;
     tableHead.appendChild(th);
   });
-
   data.forEach(card => {
     const tr = document.createElement('tr');
     Object.values(card).forEach(value => {
@@ -246,11 +358,37 @@ function renderTable(data) {
       td.textContent = value;
       tr.appendChild(td);
     });
+    if (isBuildMode && buildStage >= 1 && buildStage <= 4) {
+      tr.style.cursor = 'pointer';
+      tr.onclick = () => {
+        if (buildSelectedCards.includes(card)) {
+          buildSelectedCards = buildSelectedCards.filter(c => c !== card);
+          tr.style.backgroundColor = '';
+        } else if (buildSelectedCards.length < 2) {
+          buildSelectedCards.push(card);
+          tr.style.backgroundColor = '#ccf';
+        }
+        confirmBtn.disabled = buildSelectedCards.length !== 2;
+      };
+    }
     cardTable.appendChild(tr);
   });
+  document.getElementById('cardTableWrapper').style.display = 'table';
 }
 
 function applyFilters() {
+  if (isBuildMode && buildStage === 0) {
+    let filtered = fullData.filter(card =>
+      (selectedHeroes.includes(card.HeroName) && card.Rarity?.toLowerCase() === 'базовая') ||
+      (card.HeroName === 'Стихия' && card.Rarity?.toLowerCase() === 'базовая')
+    );
+    if (buildLeader) {
+      filtered = filtered.concat(fullData.filter(card => card.HeroName === buildLeader && card.Rarity?.toLowerCase() === 'лидерская'));
+    }
+    renderTable(filtered);
+    confirmBtn.disabled = selectedHeroes.length !== 4;
+    return;
+  }
   let filtered = [...fullData];
   if (selectedHeroes.length > 0) {
     filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
@@ -264,7 +402,6 @@ function applyFilters() {
   const blockType = document.getElementById("blockTypeFilter").value;
   const direction = document.getElementById("directionFilter").value;
   const search = document.getElementById("searchInput").value.toLowerCase();
-
   if (element) filtered = filtered.filter(card => card.Element === element);
   if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
   if (block) filtered = filtered.filter(card => card.BlockValue === block);
@@ -273,7 +410,6 @@ function applyFilters() {
   if (search) filtered = filtered.filter(card => {
     return ['SlowText','FastText','InstantText'].some(key => (card[key] || '').toLowerCase().includes(search));
   });
-
   document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
   renderTable(filtered);
 }
@@ -288,13 +424,26 @@ document.addEventListener("DOMContentLoaded", function () {
     btn.textContent = hero;
     btn.onclick = () => {
       const index = selectedHeroes.indexOf(hero);
-      if (index >= 0) {
-        selectedHeroes.splice(index, 1);
+      if (isBuildMode) {
+        if (index >= 0) {
+          selectedHeroes.splice(index, 1);
+          if (hero === buildLeader) buildLeader = null;
+        } else if (selectedHeroes.length < 4) {
+          selectedHeroes.push(hero);
+          if (!buildLeader) buildLeader = hero;
+        }
+        updateHeroButtons();
+        applyFilters();
+        confirmBtn.disabled = selectedHeroes.length !== 4;
       } else {
-        selectedHeroes.push(hero);
+        if (index >= 0) {
+          selectedHeroes.splice(index, 1);
+        } else {
+          selectedHeroes.push(hero);
+        }
+        updateHeroButtons();
+        applyFilters();
       }
-      updateHeroButtons();
-      applyFilters();
     };
     heroList.appendChild(btn);
   });
@@ -323,6 +472,10 @@ document.addEventListener("DOMContentLoaded", function () {
     select.addEventListener('change', applyFilters);
   });
   document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+  document.getElementById('modeToggle').addEventListener('change', e => {
+    setBuildMode(e.target.checked);
+  });
 
   Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
     download: true,
@@ -356,5 +509,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
+
 </body>
 </html>
