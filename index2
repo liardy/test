@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Калькулятор карт</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .hidden { display: none; }
+    #cardTableWrapper table { border-collapse: collapse; width: 100%; }
+    #cardTableWrapper th, #cardTableWrapper td {
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+    tr.selected { background-color: #d0e8ff; }
+    tr.nonselectable { background-color: #f0f0f0; pointer-events: none; }
+    .active { background-color: green; color: white; cursor: pointer; }
+    .topbar { padding: 10px; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  </style>
+</head>
+<body>
+  <div id="buildTopbar" class="topbar">
+    <span id="buildMessage"></span>
+    <button id="resetBtn">Сбросить</button>
+    <button id="confirmBtn">Подтвердить</button>
+  </div>
+  <div id="heroList"></div>
+  <div id="cardTableWrapper">
+    <table>
+      <thead><tr id="tableHead"></tr></thead>
+      <tbody id="cardTable"></tbody>
+    </table>
+  </div>
+  <script>
+const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
+let fullData = [];
+let buildMode = true;
+let buildStage = 0;
+let buildSelectedHeroes = [];
+let buildSelectedCards = [];
+let tempSelectedCards = [];
+
+const buildMessages = [
+  "Выберите лидера и 3х героев",
+  "Выберите 2 необычные карты",
+  "Выберите 2 редкие карты",
+  "Выберите 2 легендарные карты",
+  "Выберите 2 эпические карты",
+  "Итоговый билд готов"
+];
+
+document.addEventListener("DOMContentLoaded", () => {
+  const heroList = document.getElementById("heroList");
+  const confirmBtn = document.getElementById("confirmBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const buildMessage = document.getElementById("buildMessage");
+
+  function updateHeroButtons(disable = false) {
+    document.querySelectorAll('#heroList button').forEach(btn => {
+      const name = btn.textContent;
+      btn.disabled = disable;
+      btn.style.backgroundColor = buildSelectedHeroes.includes(name) ? (buildSelectedHeroes[0] === name ? 'gold' : '#ccf') : '#fff';
+    });
+  }
+
+  function renderTable(data, allowSelect = true) {
+    const tableHead = document.getElementById("tableHead");
+    const cardTable = document.getElementById("cardTable");
+    tableHead.innerHTML = '';
+    cardTable.innerHTML = '';
+    if (data.length === 0) return;
+
+    Object.keys(data[0]).forEach(key => {
+      const th = document.createElement('th');
+      th.textContent = key;
+      tableHead.appendChild(th);
+    });
+
+    data.forEach(card => {
+      const tr = document.createElement('tr');
+      if (!allowSelect) tr.classList.add("nonselectable");
+      Object.values(card).forEach(value => {
+        const td = document.createElement('td');
+        td.textContent = value;
+        tr.appendChild(td);
+      });
+      if (allowSelect) {
+        tr.addEventListener("click", () => {
+          if (tr.classList.contains("selected")) {
+            tr.classList.remove("selected");
+            tempSelectedCards = tempSelectedCards.filter(c => c !== card);
+          } else {
+            if (tempSelectedCards.length < 2) {
+              tr.classList.add("selected");
+              tempSelectedCards.push(card);
+            }
+          }
+          confirmBtn.classList.toggle("active", tempSelectedCards.length === 2);
+          confirmBtn.disabled = tempSelectedCards.length !== 2;
+          confirmBtn.style.cursor = confirmBtn.disabled ? "not-allowed" : "pointer";
+        });
+      }
+      cardTable.appendChild(tr);
+    });
+  }
+
+  function updateBuildTable() {
+    const leader = buildSelectedHeroes[0];
+    const others = buildSelectedHeroes.slice(1);
+    const all = [leader, ...others];
+    const cards = fullData.filter(card => {
+      const rarity = (card.Rarity || '').toLowerCase();
+      const hero = card.HeroName;
+      return (
+        (rarity === "лидерская" && hero === leader) ||
+        (rarity === "базовая" && all.includes(hero))
+      );
+    });
+    renderTable(cards, false);
+  }
+
+  function advanceBuildStage() {
+    const allHeroes = [...buildSelectedHeroes, "Стихия"];
+    const leader = buildSelectedHeroes[0];
+    let cardsToShow = [];
+    if (buildStage >= 1 && buildStage <= 4) {
+      const rarities = ["необычная", "редкая", "легендарная", "эпическая"];
+      const rarity = rarities[buildStage - 1];
+      cardsToShow = fullData.filter(c => (c.Rarity || '').toLowerCase() === rarity && allHeroes.includes(c.HeroName));
+      renderTable(cardsToShow);
+    } else if (buildStage === 5) {
+      buildSelectedCards.push(...tempSelectedCards);
+      const finalCards = [];
+      finalCards.push(...fullData.filter(c => (c.Rarity || '').toLowerCase() === "лидерская" && c.HeroName === leader));
+      finalCards.push(...fullData.filter(c => (c.Rarity || '').toLowerCase() === "базовая" && buildSelectedHeroes.includes(c.HeroName)));
+      finalCards.push(...buildSelectedCards);
+      renderTable(finalCards, false);
+    }
+  }
+
+  confirmBtn.addEventListener("click", () => {
+    if (buildStage === 0 && buildSelectedHeroes.length === 4) {
+      buildStage = 1;
+      confirmBtn.disabled = true;
+      confirmBtn.classList.remove("active");
+      confirmBtn.style.cursor = "not-allowed";
+      buildMessage.textContent = buildMessages[buildStage];
+      updateHeroButtons(true);
+      advanceBuildStage();
+    } else if (buildStage >= 1 && buildStage <= 4 && tempSelectedCards.length === 2) {
+      buildSelectedCards.push(...tempSelectedCards);
+      tempSelectedCards = [];
+      buildStage++;
+      buildMessage.textContent = buildMessages[buildStage];
+      confirmBtn.disabled = true;
+      confirmBtn.classList.remove("active");
+      confirmBtn.style.cursor = "not-allowed";
+      advanceBuildStage();
+    }
+  });
+
+  resetBtn.addEventListener("click", () => {
+    buildStage = 0;
+    buildSelectedHeroes = [];
+    buildSelectedCards = [];
+    tempSelectedCards = [];
+    buildMessage.textContent = buildMessages[0];
+    updateHeroButtons(false);
+    renderTable([], false);
+    confirmBtn.disabled = true;
+    confirmBtn.classList.remove("active");
+    confirmBtn.style.cursor = "not-allowed";
+  });
+
+  heroNames.forEach(hero => {
+    const btn = document.createElement("button");
+    btn.textContent = hero;
+    btn.addEventListener("click", () => {
+      if (!buildMode || buildStage > 0) return;
+      if (buildSelectedHeroes.includes(hero)) {
+        buildSelectedHeroes = buildSelectedHeroes.filter(h => h !== hero);
+      } else if (buildSelectedHeroes.length < 4) {
+        buildSelectedHeroes.push(hero);
+      }
+      updateHeroButtons();
+      if (buildSelectedHeroes.length === 4) {
+        confirmBtn.disabled = false;
+        confirmBtn.classList.add("active");
+        confirmBtn.style.cursor = "pointer";
+      } else {
+        confirmBtn.disabled = true;
+        confirmBtn.classList.remove("active");
+        confirmBtn.style.cursor = "not-allowed";
+      }
+      updateBuildTable();
+    });
+    heroList.appendChild(btn);
+  });
+
+  Papa.parse("https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv", {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function (results) {
+      fullData = results.data;
+      buildMessage.textContent = buildMessages[0];
+    }
+  });
+});
+</script>
+</body>
+</html>
