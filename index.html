@@ -1,56 +1,50 @@
 <!DOCTYPE html>
-<!-- Объявление типа документа HTML5 -->
 <html lang="ru">
 <head>
-  <!-- Установка кодировки и масштаба для адаптивного дизайна -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Калькулятор карт</title>
-
-  <!-- Подключение библиотеки PapaParse для чтения CSV-файлов из Google Sheets -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <!-- Встроенные стили для визуального оформления страницы -->
   <style>
     body {
-      display: flex; /* Используем flexbox для размещения боковой панели и основного контента */
-      font-family: Arial, sans-serif; /* Шрифт */
-      margin: 0; /* Убираем внешние отступы */
+      display: flex;
+      font-family: Arial, sans-serif;
+      margin: 0;
     }
     .sidebar {
-      width: 100px; /* Ширина боковой панели */
-      padding: 10px; /* Внутренние отступы */
-      border-right: 1px solid #ccc; /* Граница справа */
-      background-color: #f8f8f8; /* Цвет фона */
+      width: 100px;
+      padding: 10px;
+      border-right: 1px solid #ccc;
+      background-color: #f8f8f8;
     }
     .sidebar h2 {
-      font-size: 16px; /* Размер заголовка */
-      margin-bottom: 10px; /* Отступ снизу */
+      font-size: 16px;
+      margin-bottom: 10px;
     }
     .sidebar button {
-      display: block; /* Кнопки в столбик */
-      width: 100%; /* Полная ширина */
+      display: block;
+      width: 100%;
       margin-bottom: 5px;
       padding: 4px;
       font-size: 13px;
       background: #fff;
       border: 1px solid #ccc;
-      cursor: pointer; /* Курсор при наведении */
+      cursor: pointer;
     }
     .main {
-      flex: 1; /* Основная область занимает оставшееся пространство */
+      flex: 1;
       padding: 10px;
     }
     table {
       width: 100%;
-      border-collapse: collapse; /* Убираем двойные границы между ячейками */
+      border-collapse: collapse;
     }
     th, td {
       border: 1px solid #ccc;
       padding: 5px;
       text-align: left;
-      white-space: pre-wrap; /* Сохраняем переносы строк */
-      word-break: break-word; /* Разрыв слов при необходимости */
+      white-space: pre-wrap;
+      word-break: break-word;
     }
     .rarity-btn {
       padding: 2px;
@@ -128,9 +122,7 @@
   </style>
 </head>
 <body>
-  <!-- Левая боковая панель -->
   <div class="sidebar">
-    <!-- Переключатель между режимом поиска и билда -->
     <div class="toggle-wrapper">
       <label for="modeToggle" class="filter-label">Поиск/Билд</label>
       <label class="switch">
@@ -139,208 +131,230 @@
       </label>
     </div>
     <h2>Герои</h2>
-    <div id="heroList"></div> <!-- Контейнер для кнопок героев -->
+    <div id="heroList"></div>
     <hr style="margin: 10px 0;">
     <div>
-      <button id="allHeroesBtn">Все</button> <!-- Кнопка выбора всех героев -->
-      <button id="elementalHeroBtn">Стихия</button> <!-- Кнопка выбора героя "Стихия" -->
+      <button id="allHeroesBtn">Все</button>
+      <button id="elementalHeroBtn">Стихия</button>
     </div>
   </div>
-
-  <!-- Основная область -->
   <div class="main">
     <div class="topbar">
-      <!-- Поле ввода текста для поиска -->
       <div style="display: flex; flex-direction: column;">
         <label class="filter-label" for="searchInput">Поиск</label>
         <input type="text" id="searchInput" class="search-input" placeholder="Введите текст...">
       </div>
     </div>
-
-    <!-- Блок с фильтрами -->
     <div style="margin-bottom: 10px;">
-      <!-- Фильтр по редкости -->
       <div style="display: flex; flex-direction: column; margin-bottom: 5px;">
         <label class="filter-label">Ценность</label>
         <div id="rarityButtons" style="display: flex; flex-wrap: wrap; gap: 5px;">
-          <!-- Здесь создаются кнопки для фильтрации по редкости -->
+          <button class="rarity-btn" data-value="базовая">
+            <img src="images/CommonRarity.png" alt="Базовая">
+          </button>
+          <button class="rarity-btn" data-value="необычная">
+            <img src="images/UncommonRarity.png" alt="Необычная">
+          </button>
+          <button class="rarity-btn" data-value="редкая">
+            <img src="images/RareRarity.png" alt="Редкая">
+          </button>
+          <button class="rarity-btn" data-value="легендарная">
+            <img src="images/LegendRarity.png" alt="Легендарная">
+          </button>
+          <button class="rarity-btn" data-value="эпическая">
+            <img src="images/EpicRarity.png" alt="Эпическая">
+          </button>
+          <button class="rarity-btn" data-value="лидерская">
+            <img src="images/HeroRarity.png" alt="Лидерская">
+          </button>
         </div>
       </div>
-
-      <!-- Дополнительные фильтры по параметрам -->
       <div class="filters" style="display: flex; flex-wrap: wrap; gap: 10px;">
-        <!-- Селекты для фильтрации -->
-        <!-- Элемент, Урон, Блок, Тип блока, Направленность -->
+        <div style="display: flex; flex-direction: column;">
+          <label class="filter-label" for="elementFilter">Элемент</label>
+          <select id="elementFilter">
+            <option value="">Любой</option>
+            <option>Истина</option>
+            <option>Хаос</option>
+            <option>Свобода</option>
+            <option>Универсум</option>
+          </select>
+        </div>
+        <select id="damageFilter">
+          <option value="">Базовый урон</option>
+          <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+        </select>
+        <select id="blockFilter">
+          <option value="">Блок</option>
+          <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        </select>
+        <select id="blockTypeFilter">
+          <option value="">Тип блока</option>
+          <option>Стандартный блок</option>
+          <option>Блок с отражением</option>
+          <option>Блок с поглощением</option>
+          <option>Блок союзника</option>
+          <option>Блок доп. урона</option>
+          <option>Блок свойства</option>
+        </select>
+        <select id="directionFilter">
+          <option value="">Направленность</option>
+          <option>По области</option>
+          <option>Прицельная</option>
+        </select>
       </div>
-
-      <!-- Заголовок таблицы -->
       <h2>Карты</h2>
-      <!-- Таблица карт, по умолчанию скрыта -->
       <table style="display:none;" id="cardTableWrapper">
         <thead><tr id="tableHead"></tr></thead>
         <tbody id="cardTable"></tbody>
       </table>
     </div>
   </div>
+<script>
+const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
+let selectedHeroes = [];
+let selectedRarities = [];
+let fullData = [];
 
-  <!-- Скрипт логики фильтрации, отображения и загрузки -->
-  <script>
-    // Список имён героев для фильтрации
-    const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
-    let selectedHeroes = []; // Выбранные герои
-    let selectedRarities = []; // Выбранные редкости
-    let fullData = []; // Все данные карт
+function updateHeroButtons() {
+  document.querySelectorAll('#heroList button').forEach(btn => {
+    const name = btn.textContent;
+    btn.style.backgroundColor = selectedHeroes.includes(name) ? '#ccf' : '#fff';
+  });
+  document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
+  document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
+}
 
-    // Обновление цвета кнопок героев при выборе
-    function updateHeroButtons() {
-      document.querySelectorAll('#heroList button').forEach(btn => {
-        const name = btn.textContent;
-        btn.style.backgroundColor = selectedHeroes.includes(name) ? '#ccf' : '#fff';
-      });
-      document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
-      document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
-    }
+function renderTable(data) {
+  const tableHead = document.getElementById("tableHead");
+  const cardTable = document.getElementById("cardTable");
+  tableHead.innerHTML = '';
+  cardTable.innerHTML = '';
 
-    // Рендер таблицы карт
-    function renderTable(data) {
-      const tableHead = document.getElementById("tableHead");
-      const cardTable = document.getElementById("cardTable");
-      tableHead.innerHTML = '';
-      cardTable.innerHTML = '';
+  if (data.length === 0) return;
+  Object.keys(data[0]).forEach(key => {
+    const th = document.createElement('th');
+    th.textContent = key;
+    tableHead.appendChild(th);
+  });
 
-      if (data.length === 0) return;
-      Object.keys(data[0]).forEach(key => {
-        const th = document.createElement('th');
-        th.textContent = key;
-        tableHead.appendChild(th);
-      });
+  data.forEach(card => {
+    const tr = document.createElement('tr');
+    Object.values(card).forEach(value => {
+      const td = document.createElement('td');
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+    cardTable.appendChild(tr);
+  });
+}
 
-      data.forEach(card => {
-        const tr = document.createElement('tr');
-        Object.values(card).forEach(value => {
-          const td = document.createElement('td');
-          td.textContent = value;
-          tr.appendChild(td);
-        });
-        cardTable.appendChild(tr);
-      });
-    }
+function applyFilters() {
+  let filtered = [...fullData];
+  if (selectedHeroes.length > 0) {
+    filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
+  }
+  if (selectedRarities.length > 0) {
+    filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
+  }
+  const element = document.getElementById("elementFilter").value;
+  const dmg = document.getElementById("damageFilter").value;
+  const block = document.getElementById("blockFilter").value;
+  const blockType = document.getElementById("blockTypeFilter").value;
+  const direction = document.getElementById("directionFilter").value;
+  const search = document.getElementById("searchInput").value.toLowerCase();
 
-    // Применение всех фильтров к данным
-    function applyFilters() {
-      let filtered = [...fullData];
-      if (selectedHeroes.length > 0) {
-        filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
+  if (element) filtered = filtered.filter(card => card.Element === element);
+  if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
+  if (block) filtered = filtered.filter(card => card.BlockValue === block);
+  if (blockType) filtered = filtered.filter(card => card.Type === blockType);
+  if (direction) filtered = filtered.filter(card => card.Type === direction);
+  if (search) filtered = filtered.filter(card => {
+    return ['SlowText','FastText','InstantText'].some(key => (card[key] || '').toLowerCase().includes(search));
+  });
+
+  document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
+  renderTable(filtered);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const heroList = document.getElementById('heroList');
+  const allHeroesBtn = document.getElementById('allHeroesBtn');
+  const elementalHeroBtn = document.getElementById('elementalHeroBtn');
+
+  heroNames.forEach(hero => {
+    const btn = document.createElement('button');
+    btn.textContent = hero;
+    btn.onclick = () => {
+      const index = selectedHeroes.indexOf(hero);
+      if (index >= 0) {
+        selectedHeroes.splice(index, 1);
+      } else {
+        selectedHeroes.push(hero);
       }
-      if (selectedRarities.length > 0) {
-        filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
-      }
-      const element = document.getElementById("elementFilter").value;
-      const dmg = document.getElementById("damageFilter").value;
-      const block = document.getElementById("blockFilter").value;
-      const blockType = document.getElementById("blockTypeFilter").value;
-      const direction = document.getElementById("directionFilter").value;
-      const search = document.getElementById("searchInput").value.toLowerCase();
+      updateHeroButtons();
+      applyFilters();
+    };
+    heroList.appendChild(btn);
+  });
 
-      if (element) filtered = filtered.filter(card => card.Element === element);
-      if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
-      if (block) filtered = filtered.filter(card => card.BlockValue === block);
-      if (blockType) filtered = filtered.filter(card => card.Type === blockType);
-      if (direction) filtered = filtered.filter(card => card.Type === direction);
-      if (search) filtered = filtered.filter(card => {
-        return ['SlowText','FastText','InstantText'].some(key => (card[key] || '').toLowerCase().includes(search));
-      });
-
-      document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
-      renderTable(filtered);
+  allHeroesBtn.onclick = () => {
+    if (selectedHeroes.length === heroNames.length + 1) {
+      selectedHeroes = [];
+    } else {
+      selectedHeroes = [...heroNames, "Стихия"];
     }
+    updateHeroButtons();
+    applyFilters();
+  };
 
-    // После полной загрузки страницы
-    document.addEventListener("DOMContentLoaded", function () {
-      const heroList = document.getElementById('heroList');
-      const allHeroesBtn = document.getElementById('allHeroesBtn');
-      const elementalHeroBtn = document.getElementById('elementalHeroBtn');
+  elementalHeroBtn.onclick = () => {
+    if (selectedHeroes.includes("Стихия")) {
+      selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
+    } else {
+      selectedHeroes.push("Стихия");
+    }
+    updateHeroButtons();
+    applyFilters();
+  };
 
-      // Генерация кнопок героев
-      heroNames.forEach(hero => {
-        const btn = document.createElement('button');
-        btn.textContent = hero;
-        btn.onclick = () => {
-          const index = selectedHeroes.indexOf(hero);
+  document.querySelectorAll('.filters select').forEach(select => {
+    select.addEventListener('change', applyFilters);
+  });
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+  Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      fullData = results.data;
+      document.querySelectorAll('.rarity-btn').forEach(btn => {
+        const rarity = btn.dataset.value;
+        selectedRarities.push(rarity);
+        btn.classList.add('active');
+      });
+      renderTable(fullData);
+      applyFilters();
+
+      document.querySelectorAll('.rarity-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rarity = btn.dataset.value;
+          const index = selectedRarities.indexOf(rarity);
           if (index >= 0) {
-            selectedHeroes.splice(index, 1);
+            selectedRarities.splice(index, 1);
+            btn.classList.remove('active');
           } else {
-            selectedHeroes.push(hero);
-          }
-          updateHeroButtons();
-          applyFilters();
-        };
-        heroList.appendChild(btn);
-      });
-
-      // Кнопка "Все герои"
-      allHeroesBtn.onclick = () => {
-        if (selectedHeroes.length === heroNames.length + 1) {
-          selectedHeroes = [];
-        } else {
-          selectedHeroes = [...heroNames, "Стихия"];
-        }
-        updateHeroButtons();
-        applyFilters();
-      };
-
-      // Кнопка "Стихия"
-      elementalHeroBtn.onclick = () => {
-        if (selectedHeroes.includes("Стихия")) {
-          selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
-        } else {
-          selectedHeroes.push("Стихия");
-        }
-        updateHeroButtons();
-        applyFilters();
-      };
-
-      // Применение фильтра при изменении select'ов
-      document.querySelectorAll('.filters select').forEach(select => {
-        select.addEventListener('change', applyFilters);
-      });
-      // Фильтрация при вводе текста
-      document.getElementById('searchInput').addEventListener('input', applyFilters);
-
-      // Загрузка данных из Google таблицы
-      Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-          fullData = results.data; // Сохраняем все данные
-          // Активируем все кнопки редкости по умолчанию
-          document.querySelectorAll('.rarity-btn').forEach(btn => {
-            const rarity = btn.dataset.value;
             selectedRarities.push(rarity);
             btn.classList.add('active');
-          });
-          renderTable(fullData);
+          }
           applyFilters();
-
-          // События нажатия на кнопки редкости
-          document.querySelectorAll('.rarity-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const rarity = btn.dataset.value;
-              const index = selectedRarities.indexOf(rarity);
-              if (index >= 0) {
-                selectedRarities.splice(index, 1);
-                btn.classList.remove('active');
-              } else {
-                selectedRarities.push(rarity);
-                btn.classList.add('active');
-              }
-              applyFilters();
-            });
-          });
-        }
+        });
       });
-    });
-  </script>
+    }
+  });
+});
+</script>
 </body>
 </html>
