@@ -1,43 +1,127 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <!-- Основные мета-теги и подключение библиотеки PapaParse -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Калькулятор карт</title>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
-    /* Стилизация страницы: layout, sidebar, таблица, переключатели и кнопки */
-    body { display: flex; font-family: Arial, sans-serif; margin: 0; }
-    .sidebar { width: 100px; padding: 10px; border-right: 1px solid #ccc; background-color: #f8f8f8; }
-    .sidebar h2 { font-size: 16px; margin-bottom: 10px; }
-    .sidebar button { display: block; width: 100%; margin-bottom: 5px; padding: 4px; font-size: 13px; background: #fff; border: 1px solid #ccc; cursor: pointer; }
-    .sidebar button.active { background-color: #ccf; }
-    .sidebar button.leader { background-color: gold !important; }
-    .sidebar button.locked { pointer-events: none; opacity: 0.6; }
-    .main { flex: 1; padding: 10px; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 5px; text-align: left; white-space: pre-wrap; word-break: break-word; }
-    .filter-label { font-size: 13px; margin-bottom: 3px; }
-    .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .search-input { font-size: 13px; padding: 4px; }
-    .toggle-wrapper { display: flex; flex-direction: column; margin-bottom: 10px; }
-    .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: 0.4s; border-radius: 34px; }
-    .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: 0.4s; border-radius: 50%; }
-    .switch input:checked + .slider { background-color: #26a69a; }
-    .switch input:checked + .slider:before { transform: translateX(16px); }
-    #infoBlock { display: none; margin-bottom: 10px; font-weight: bold; }
-    #confirmBtn { display: none; float: right; margin-bottom: 10px; }
-    #confirmBtn:disabled { background-color: #ccc; color: #666; cursor: not-allowed; }
-    #confirmBtn.enabled { background-color: #4CAF50; color: white; }
-    #filterControls { display: flex; flex-direction: column; }
-    tr.selected { background-color: lightgreen; }
+    body {
+      display: flex;
+      font-family: Arial, sans-serif;
+      margin: 0;
+    }
+    .sidebar {
+      width: 100px;
+      padding: 10px;
+      border-right: 1px solid #ccc;
+      background-color: #f8f8f8;
+    }
+    .sidebar h2 {
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .sidebar button {
+      display: block;
+      width: 100%;
+      margin-bottom: 5px;
+      padding: 4px;
+      font-size: 13px;
+      background: #fff;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+    .main {
+      flex: 1;
+      padding: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 5px;
+      text-align: left;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .rarity-btn {
+      padding: 2px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+    .rarity-btn img {
+      height: 32px;
+      transition: 0.2s ease;
+      border-radius: 6px;
+    }
+    .rarity-btn.active img {
+      box-shadow: 0 0 5px 2px #4488ff;
+      background-color: #e0f0ff;
+    }
+    .filter-label {
+      font-size: 13px;
+      font-weight: normal;
+      margin-bottom: 3px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .search-input {
+      font-size: 13px;
+      padding: 4px;
+    }
+    .toggle-wrapper {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 10px;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+    }
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0;
+      right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px;
+      width: 14px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    .switch input:checked + .slider {
+      background-color: #26a69a;
+    }
+    .switch input:checked + .slider:before {
+      transform: translateX(16px);
+    }
   </style>
 </head>
 <body>
-  <!-- Боковая панель с переключателем режима и кнопками выбора героев -->
   <div class="sidebar">
     <div class="toggle-wrapper">
       <label for="modeToggle" class="filter-label">Поиск/Билд</label>
@@ -49,28 +133,77 @@
     <h2>Герои</h2>
     <div id="heroList"></div>
     <hr style="margin: 10px 0;">
-    <div id="extraHeroButtons">
+    <div>
       <button id="allHeroesBtn">Все</button>
       <button id="elementalHeroBtn">Стихия</button>
     </div>
   </div>
-
-  <!-- Основная часть страницы -->
   <div class="main">
-    <div class="topbar" id="filterControls">
-      <!-- Поле поиска -->
+    <div class="topbar">
       <div style="display: flex; flex-direction: column;">
         <label class="filter-label" for="searchInput">Поиск</label>
         <input type="text" id="searchInput" class="search-input" placeholder="Введите текст...">
       </div>
     </div>
-
-    <!-- Инфо-блок и кнопка подтверждения в режиме билда -->
-    <div id="infoBlock">Выберите лидера и 3х героев</div>
-    <button id="confirmBtn" disabled>Подтвердить</button>
-
-    <!-- Таблица с картами -->
-    <div id="filtersBlock">
+    <div style="margin-bottom: 10px;">
+      <div style="display: flex; flex-direction: column; margin-bottom: 5px;">
+        <label class="filter-label">Ценность</label>
+        <div id="rarityButtons" style="display: flex; flex-wrap: wrap; gap: 5px;">
+          <button class="rarity-btn" data-value="базовая">
+            <img src="images/CommonRarity.png" alt="Базовая">
+          </button>
+          <button class="rarity-btn" data-value="необычная">
+            <img src="images/UncommonRarity.png" alt="Необычная">
+          </button>
+          <button class="rarity-btn" data-value="редкая">
+            <img src="images/RareRarity.png" alt="Редкая">
+          </button>
+          <button class="rarity-btn" data-value="легендарная">
+            <img src="images/LegendRarity.png" alt="Легендарная">
+          </button>
+          <button class="rarity-btn" data-value="эпическая">
+            <img src="images/EpicRarity.png" alt="Эпическая">
+          </button>
+          <button class="rarity-btn" data-value="лидерская">
+            <img src="images/HeroRarity.png" alt="Лидерская">
+          </button>
+        </div>
+      </div>
+      <div class="filters" style="display: flex; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; flex-direction: column;">
+          <label class="filter-label" for="elementFilter">Элемент</label>
+          <select id="elementFilter">
+            <option value="">Любой</option>
+            <option>Истина</option>
+            <option>Хаос</option>
+            <option>Свобода</option>
+            <option>Универсум</option>
+          </select>
+        </div>
+        <select id="damageFilter">
+          <option value="">Базовый урон</option>
+          <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+          <option>6</option><option>7</option><option>8</option><option>9</option><option>10</option>
+        </select>
+        <select id="blockFilter">
+          <option value="">Блок</option>
+          <option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+        </select>
+        <select id="blockTypeFilter">
+          <option value="">Тип блока</option>
+          <option>Стандартный блок</option>
+          <option>Блок с отражением</option>
+          <option>Блок с поглощением</option>
+          <option>Блок союзника</option>
+          <option>Блок доп. урона</option>
+          <option>Блок свойства</option>
+        </select>
+        <select id="directionFilter">
+          <option value="">Направленность</option>
+          <option>По области</option>
+          <option>Прицельная</option>
+        </select>
+      </div>
       <h2>Карты</h2>
       <table style="display:none;" id="cardTableWrapper">
         <thead><tr id="tableHead"></tr></thead>
@@ -78,222 +211,150 @@
       </table>
     </div>
   </div>
-
-<!-- Скрипт JavaScript, управляющий всей логикой -->
 <script>
-  // Переменные состояния
-  const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
-  let selectedHeroes = [];
-  let fullData = [];
-  let isBuildMode = false;
-  let buildStage = 1;
-  let savedStage1Cards = [];
+const heroNames = ["Геоморф", "Центурия", "Пиромант", "Амок", "Дорифор", "Нефилим", "Дуэлянт", "Крипта", "Доминион", "Ключница", "Алхимик", "Ренегат"];
+let selectedHeroes = [];
+let selectedRarities = [];
+let fullData = [];
 
-  // Обновляет стили кнопок героев в зависимости от выбранных и режима
-  function updateHeroButtonStyles() {
-    const buttons = document.querySelectorAll("#heroList button");
-    buttons.forEach(btn => {
-      btn.classList.remove("leader", "active", "locked");
-      if (buildStage > 1) btn.classList.add("locked");
-    });
-
-    const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
-    const elementalBtn = document.getElementById("elementalHeroBtn");
-
-    if (isBuildMode) {
-      onlyHeroes.forEach((hero, idx) => {
-        const btn = Array.from(buttons).find(b => b.textContent === hero);
-        if (btn) {
-          if (idx === 0) btn.classList.add("leader");
-          else btn.classList.add("active");
-        }
-      });
-      elementalBtn.classList.add("active");
-    } else {
-      selectedHeroes.forEach(hero => {
-        const btn = Array.from(buttons).find(b => b.textContent === hero);
-        if (btn) btn.classList.add("active");
-      });
-      elementalBtn.classList.toggle("active", selectedHeroes.includes("Стихия"));
-    }
-  }
-
-  // Рендер таблицы карт
-  function renderTable(data) {
-    const tableHead = document.getElementById("tableHead");
-    const cardTable = document.getElementById("cardTable");
-    tableHead.innerHTML = '';
-    cardTable.innerHTML = '';
-    if (data.length === 0) return;
-    
-    // Заголовки
-    Object.keys(data[0]).forEach(key => {
-      const th = document.createElement('th');
-      th.textContent = key;
-      tableHead.appendChild(th);
-    });
-
-    // Строки таблицы
-    data.forEach(card => {
-      const tr = document.createElement('tr');
-      Object.values(card).forEach(value => {
-        const td = document.createElement('td');
-        td.textContent = value;
-        tr.appendChild(td);
-      });
-
-      // Для второго этапа билда – выбор 2 карт
-      if (buildStage === 2) {
-        tr.onclick = () => {
-          tr.classList.toggle("selected");
-          const selected = document.querySelectorAll("#cardTable tr.selected").length;
-          document.getElementById("confirmBtn").disabled = selected !== 2;
-        };
-      }
-      cardTable.appendChild(tr);
-    });
-  }
-
-  // Применение фильтров по выбранным героям и этапам
-  function applyFilters() {
-    let filtered = [];
-
-    if (isBuildMode) {
-      if (buildStage === 1) {
-        filtered = fullData.filter(card => {
-          if (selectedHeroes.includes("Стихия") && card.HeroName === "Стихия" && card.Rarity.toLowerCase() === "базовая") return true;
-          if (selectedHeroes.includes(card.HeroName)) {
-            const onlyHeroes = selectedHeroes.filter(h => heroNames.includes(h));
-            const isLeader = onlyHeroes[0] === card.HeroName;
-            return card.Rarity.toLowerCase() === "базовая" || (isLeader && card.Rarity.toLowerCase() === "лидерская");
-          }
-          return false;
-        });
-      } else if (buildStage === 2) {
-        filtered = fullData.filter(card =>
-          card.Rarity.toLowerCase() === "необычная" && selectedHeroes.includes(card.HeroName)
-        ).slice(0, 5);
-      }
-    } else {
-      if (selectedHeroes.length > 0) {
-        filtered = fullData.filter(card => selectedHeroes.includes(card.HeroName));
-      }
-    }
-
-    // Отображение таблицы только при наличии данных
-    document.getElementById('cardTableWrapper').style.display = filtered.length > 0 ? 'table' : 'none';
-    renderTable(filtered);
-  }
-
-  // Переключение между режимом поиска и билда
-  function toggleBuildMode() {
-    isBuildMode = document.getElementById("modeToggle").checked;
-    const filterControls = document.getElementById("filterControls");
-    const infoBlock = document.getElementById("infoBlock");
-    const confirmBtn = document.getElementById("confirmBtn");
-    const allHeroesBtn = document.getElementById("allHeroesBtn");
-
-    if (isBuildMode) {
-      filterControls.style.display = "none";
-      infoBlock.style.display = "block";
-      confirmBtn.style.display = "inline-block";
-      allHeroesBtn.style.display = "none";
-      selectedHeroes = ["Стихия"];
-      buildStage = 1;
-    } else {
-      filterControls.style.display = "flex";
-      infoBlock.style.display = "none";
-      confirmBtn.style.display = "none";
-      allHeroesBtn.style.display = "block";
-      selectedHeroes = [];
-    }
-
-    updateHeroButtonStyles();
-    applyFilters();
-  }
-
-  // Когда документ загружен — инициализация интерфейса
-  document.addEventListener("DOMContentLoaded", () => {
-    const heroList = document.getElementById('heroList');
-    const allHeroesBtn = document.getElementById('allHeroesBtn');
-    const elementalHeroBtn = document.getElementById('elementalHeroBtn');
-    const confirmBtn = document.getElementById('confirmBtn');
-    const modeToggle = document.getElementById('modeToggle');
-    const infoBlock = document.getElementById('infoBlock');
-
-    // Слушатель переключателя режима
-    modeToggle.addEventListener('change', toggleBuildMode);
-
-    // Кнопки героев
-    heroNames.forEach(hero => {
-      const btn = document.createElement('button');
-      btn.textContent = hero;
-      btn.onclick = () => {
-        if (buildStage > 1) return;
-        const index = selectedHeroes.indexOf(hero);
-        if (index >= 0) selectedHeroes.splice(index, 1);
-        else {
-          if (isBuildMode && selectedHeroes.filter(h => heroNames.includes(h)).length >= 4) return;
-          selectedHeroes.push(hero);
-        }
-
-        updateHeroButtonStyles();
-        applyFilters();
-
-        if (isBuildMode) {
-          const ready = selectedHeroes.filter(h => heroNames.includes(h)).length === 4;
-          confirmBtn.disabled = !ready;
-          confirmBtn.classList.toggle("enabled", ready);
-        }
-      };
-      heroList.appendChild(btn);
-    });
-
-    // Кнопка "Все герои"
-    allHeroesBtn.onclick = () => {
-      if (isBuildMode) return;
-      if (selectedHeroes.length === heroNames.length + 1) selectedHeroes = [];
-      else selectedHeroes = [...heroNames, "Стихия"];
-      updateHeroButtonStyles();
-      applyFilters();
-    };
-
-    // Кнопка "Стихия"
-    elementalHeroBtn.onclick = () => {
-      if (isBuildMode && buildStage > 1) return;
-      if (selectedHeroes.includes("Стихия")) selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
-      else selectedHeroes.push("Стихия");
-      updateHeroButtonStyles();
-      applyFilters();
-    };
-
-    // Подтверждение первого этапа билда
-    confirmBtn.onclick = () => {
-      if (isBuildMode && buildStage === 1) {
-        savedStage1Cards = Array.from(document.querySelectorAll("#cardTable tr")).map(tr => tr.innerHTML);
-        buildStage = 2;
-        infoBlock.textContent = "Выберите 2 необычные карты";
-        updateHeroButtonStyles();
-        confirmBtn.disabled = true;
-        confirmBtn.classList.remove("enabled");
-        applyFilters();
-      }
-    };
-
-    // Фильтр по поиску
-    document.getElementById('searchInput')?.addEventListener('input', applyFilters);
-
-    // Загрузка CSV-данных из Google Sheets через PapaParse
-    Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: function(results) {
-        fullData = results.data;
-        applyFilters();
-      }
-    });
+function updateHeroButtons() {
+  document.querySelectorAll('#heroList button').forEach(btn => {
+    const name = btn.textContent;
+    btn.style.backgroundColor = selectedHeroes.includes(name) ? '#ccf' : '#fff';
   });
+  document.getElementById("elementalHeroBtn").style.backgroundColor = selectedHeroes.includes("Стихия") ? '#ccf' : '#fff';
+  document.getElementById("allHeroesBtn").style.backgroundColor = (selectedHeroes.length === heroNames.length + 1) ? '#ccf' : '#fff';
+}
+
+function renderTable(data) {
+  const tableHead = document.getElementById("tableHead");
+  const cardTable = document.getElementById("cardTable");
+  tableHead.innerHTML = '';
+  cardTable.innerHTML = '';
+
+  if (data.length === 0) return;
+  Object.keys(data[0]).forEach(key => {
+    const th = document.createElement('th');
+    th.textContent = key;
+    tableHead.appendChild(th);
+  });
+
+  data.forEach(card => {
+    const tr = document.createElement('tr');
+    Object.values(card).forEach(value => {
+      const td = document.createElement('td');
+      td.textContent = value;
+      tr.appendChild(td);
+    });
+    cardTable.appendChild(tr);
+  });
+}
+
+function applyFilters() {
+  let filtered = [...fullData];
+  if (selectedHeroes.length > 0) {
+    filtered = filtered.filter(card => selectedHeroes.includes(card.HeroName));
+  }
+  if (selectedRarities.length > 0) {
+    filtered = filtered.filter(card => selectedRarities.includes((card.Rarity || '').toLowerCase()));
+  }
+  const element = document.getElementById("elementFilter").value;
+  const dmg = document.getElementById("damageFilter").value;
+  const block = document.getElementById("blockFilter").value;
+  const blockType = document.getElementById("blockTypeFilter").value;
+  const direction = document.getElementById("directionFilter").value;
+  const search = document.getElementById("searchInput").value.toLowerCase();
+
+  if (element) filtered = filtered.filter(card => card.Element === element);
+  if (dmg) filtered = filtered.filter(card => card.DMGValue === dmg);
+  if (block) filtered = filtered.filter(card => card.BlockValue === block);
+  if (blockType) filtered = filtered.filter(card => card.Type === blockType);
+  if (direction) filtered = filtered.filter(card => card.Type === direction);
+  if (search) filtered = filtered.filter(card => {
+    return ['SlowText','FastText','InstantText'].some(key => (card[key] || '').toLowerCase().includes(search));
+  });
+
+  document.getElementById('cardTableWrapper').style.display = selectedHeroes.length > 0 ? 'table' : 'none';
+  renderTable(filtered);
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  const heroList = document.getElementById('heroList');
+  const allHeroesBtn = document.getElementById('allHeroesBtn');
+  const elementalHeroBtn = document.getElementById('elementalHeroBtn');
+
+  heroNames.forEach(hero => {
+    const btn = document.createElement('button');
+    btn.textContent = hero;
+    btn.onclick = () => {
+      const index = selectedHeroes.indexOf(hero);
+      if (index >= 0) {
+        selectedHeroes.splice(index, 1);
+      } else {
+        selectedHeroes.push(hero);
+      }
+      updateHeroButtons();
+      applyFilters();
+    };
+    heroList.appendChild(btn);
+  });
+
+  allHeroesBtn.onclick = () => {
+    if (selectedHeroes.length === heroNames.length + 1) {
+      selectedHeroes = [];
+    } else {
+      selectedHeroes = [...heroNames, "Стихия"];
+    }
+    updateHeroButtons();
+    applyFilters();
+  };
+
+  elementalHeroBtn.onclick = () => {
+    if (selectedHeroes.includes("Стихия")) {
+      selectedHeroes = selectedHeroes.filter(h => h !== "Стихия");
+    } else {
+      selectedHeroes.push("Стихия");
+    }
+    updateHeroButtons();
+    applyFilters();
+  };
+
+  document.querySelectorAll('.filters select').forEach(select => {
+    select.addEventListener('change', applyFilters);
+  });
+  document.getElementById('searchInput').addEventListener('input', applyFilters);
+
+  Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vSeaBC_htVIH4eRizLVioNG8zhBcPXM2T9kEzFTMY5cB1GgjsaveB7DyZ5JxjSWgQSmo41yHkRDnRuy/pub?output=csv', {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+      fullData = results.data;
+      document.querySelectorAll('.rarity-btn').forEach(btn => {
+        const rarity = btn.dataset.value;
+        selectedRarities.push(rarity);
+        btn.classList.add('active');
+      });
+      renderTable(fullData);
+      applyFilters();
+
+      document.querySelectorAll('.rarity-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const rarity = btn.dataset.value;
+          const index = selectedRarities.indexOf(rarity);
+          if (index >= 0) {
+            selectedRarities.splice(index, 1);
+            btn.classList.remove('active');
+          } else {
+            selectedRarities.push(rarity);
+            btn.classList.add('active');
+          }
+          applyFilters();
+        });
+      });
+    }
+  });
+});
 </script>
 </body>
 </html>
